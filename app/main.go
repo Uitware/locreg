@@ -71,12 +71,13 @@ func buildCommand(dir string) error {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
 
-	return imageBuildAndPsuh(cli, dir)
+	return imageBuildAndPush(cli, dir)
 }
 
 func runDistribution(dockerClient *client.Client) error {
+	// run distribution registry container
 	ctx := context.Background()
-	// TODO use config to set port
+	// TODO use config to set port or use default
 	portBindings := nat.PortMap{
 		"5000/tcp": []nat.PortBinding{
 			{
@@ -98,7 +99,7 @@ func runDistribution(dockerClient *client.Client) error {
 	}(reader)
 
 	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
-		Image: "distribution/registry",
+		Image: "distribution/registry", // Local registry image
 		ExposedPorts: nat.PortSet{
 			"5000/tcp": struct{}{},
 		},
@@ -116,9 +117,9 @@ func runDistribution(dockerClient *client.Client) error {
 	return nil
 }
 
-func imageBuildAndPsuh(dockerClient *client.Client, dir string) error {
+func imageBuildAndPush(dockerClient *client.Client, dir string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	// TODO use config to set tag
+	// TODO use config to set tag and port from runDistribution
 	ImageTagString := "localhost:5000/test:latest"
 	authConfig := registry.AuthConfig{
 		Username:      "test",

@@ -71,71 +71,52 @@ func buildCommand(dir string) error {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
 
-	return imageBuildAndPush(cli, dir)
+	return imageBuildAndPsuh(cli, dir)
 }
 
 func runDistribution(dockerClient *client.Client) error {
-	// run distribution registry container
 	ctx := context.Background()
-	registryPort := "5000"                                                   // Later should be taken from config and this variable deleted
-	registryVersion := "latest"                                              // Later should be taken from config
-	registryName := "my_registry"                                            // Later should be taken from config
-	imageVersion := fmt.Sprintf("distribution/registry:%s", registryVersion) // Later should be taken from config
-
-	// Will be created because it has a special type of nat.port
-	// Create specifically formated string for port mapping
-	port, err := nat.NewPort("tcp", registryPort)
-	if err != nil {
-		return fmt.Errorf("failed to create port: %w", err)
-	}
-	portBindings := nat.PortMap{ // Container port bindings
-		port: []nat.PortBinding{
+	portBindings := nat.PortMap{
+		"5000/tcp": []nat.PortBinding{
 			{
 				HostIP:   "0.0.0.0",
-				HostPort: registryPort,
+				HostPort: "5000",
 			},
 		},
 	}
 
-	imagePuller, err := dockerClient.ImagePull(ctx, imageVersion, image.PullOptions{})
+	reader, err := dockerClient.ImagePull(ctx, "distribution/registry", image.PullOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to pull distribution image: %w", err)
 	}
-	defer func(imagePuller io.ReadCloser) {
-		err := imagePuller.Close()
+	defer func(reader io.ReadCloser) {
+		err := reader.Close()
 		if err != nil {
-			fmt.Printf("Failed to close image pull: %v\n", err)
+
 		}
-	}(imagePuller)
+	}(reader)
 
 	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
-		Image: imageVersion, // Local registry image
+		Image: "distribution/registry",
 		ExposedPorts: nat.PortSet{
-			port: struct{}{},
+			"5000/tcp": struct{}{},
 		},
-	},
-		&container.HostConfig{
-			PortBindings: portBindings,
-		},
-		nil,
-		nil,
-		registryName,
-	)
+	}, &container.HostConfig{
+		PortBindings: portBindings,
+	}, nil, nil, "my_registry")
 	if err != nil {
 		return fmt.Errorf("failed to create distribution container: %w", err)
 	}
-
-	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
-	if err != nil {
+	if err := dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return fmt.Errorf("failed to start distribution container: %w", err)
 	}
+
 	fmt.Printf("Container started with ID: %s\n", resp.ID)
 	return nil
 }
 
-func imageBuildAndPush(dockerClient *client.Client, dir string) error {
+func imageBuildAndPsuh(dockerClient *client.Client, dir string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	// TODO use config to set tag and port from runDistribution
 	ImageTagString := "localhost:5000/test:latest"
 	authConfig := registry.AuthConfig{
 		Username:      "test",

@@ -76,6 +76,7 @@ func buildCommand(dir string) error {
 
 func runDistribution(dockerClient *client.Client) error {
 	ctx := context.Background()
+	// TODO use config to set port
 	portBindings := nat.PortMap{
 		"5000/tcp": []nat.PortBinding{
 			{
@@ -117,6 +118,7 @@ func runDistribution(dockerClient *client.Client) error {
 
 func imageBuildAndPsuh(dockerClient *client.Client, dir string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	// TODO use config to set tag
 	ImageTagString := "localhost:5000/test:latest"
 	authConfig := registry.AuthConfig{
 		Username:      "test",

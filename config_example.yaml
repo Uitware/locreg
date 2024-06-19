@@ -1,0 +1,29 @@
+Registry:
+  port: 5555 # Port to run the registry on and to which the tunnel will be forwarded
+  tag: "latest" # Tag to be used for the image
+  image: "myImage" # Image name
+  username: "myUsername" # Username for the registry
+  password: "myPassword" # Password for the registry
+#DeployOn:
+#  type: "Azure" # Type of cloud provider
+#  port: 1111  # Exposed port in docker container
+#  geoLocation: "us-east-1" # Location of resources
+DeployApp:
+  provider:
+    azure:
+      resourceGroup: "myResourceGroup" # Resource group name
+      appsServicePlan:
+        name: "myAppServicePlan" # App service plan name
+        sku: "F1" # App service plan sku
+        capacity: 1 # App service plan capacity
+        tier: "Free" # App service plan tier
+      appService:
+        name: "myAppService" # App service name
+        runtime: "node|12-lts" # App service runtime
+        deploymentSlot: "production" # App service deployment slot
+        sourceControl:
+          type: "GitHub" # Source control type
+Deploy:
+
+DeployTunnel:
+  type: "CloudFlare" # Provide type for tunnel

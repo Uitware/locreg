@@ -4,26 +4,20 @@ Registry:
   image: "myImage" # Image name
   username: "myUsername" # Username for the registry
   password: "myPassword" # Password for the registry
-#DeployOn:
-#  type: "Azure" # Type of cloud provider
-#  port: 1111  # Exposed port in docker container
-#  geoLocation: "us-east-1" # Location of resources
-DeployApp:
+
+Deploy:
   provider:
     azure:
       resourceGroup: "myResourceGroup" # Resource group name
       appsServicePlan:
         name: "myAppServicePlan" # App service plan name
-        sku: "F1" # App service plan sku
-        capacity: 1 # App service plan capacity
-        tier: "Free" # App service plan tier
+        SKU:
+          sku: "F1" # App service plan sku
+          capacity: 1 # App service plan capacity
+          tier: "Free" # App service plan tier
+        PlanProperties:
+          reserved: true # App service plan reserved
       appService:
         name: "myAppService" # App service name
-        runtime: "node|12-lts" # App service runtime
-        deploymentSlot: "production" # App service deployment slot
-        sourceControl:
-          type: "GitHub" # Source control type
-Deploy:
-
-DeployTunnel:
-  type: "CloudFlare" # Provide type for tunnel
+        SiteConfig:
+          AlwaysOn: true # App service always on

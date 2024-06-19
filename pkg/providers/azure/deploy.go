@@ -3,6 +3,7 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os/exec"
 
@@ -17,6 +18,11 @@ var (
 	resourceGroupName  = "sample-resource-group"
 	appServicePlanName = "sample-appservice-plan"
 	appServiceName     = "sample-appservice-app"
+	dockregServerURL   = "https://index.docker.io/v1/"
+	dockregUsername    = "username"
+	dockregPassword    = "password"
+	dockerImage        = "nginx"
+	tag                = "latest"
 )
 
 var (
@@ -71,7 +77,7 @@ func Deploy() {
 	}
 	log.Println("App service plan created:", *appServicePlan.ID)
 
-	appService, err := createWebApp(ctx, *appServicePlan.ID)
+	appService, err := createWebApp(ctx, dockregServerURL, dockregUsername, dockregPassword, *appServicePlan.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -118,7 +124,7 @@ func createAppServicePlan(ctx context.Context) (*armappservice.Plan, error) {
 			SKU: &armappservice.SKUDescription{
 				Name:     to.Ptr("S1"),
 				Capacity: to.Ptr[int32](1),
-				Tier:     to.Ptr("STANDARD"),
+				Tier:     to.Ptr("Standard"),
 			},
 			Properties: &armappservice.PlanProperties{
 				Reserved: to.Ptr(true),
@@ -136,8 +142,9 @@ func createAppServicePlan(ctx context.Context) (*armappservice.Plan, error) {
 	return &resp.Plan, nil
 }
 
-func createWebApp(ctx context.Context, appServicePlanID string) (*armappservice.Site, error) {
+func createWebApp(ctx context.Context, dockregServerURL, dockregUsername, dockregPassword, appServicePlanID string) (*armappservice.Site, error) {
 	log.Println("Creating Web App...")
+
 	pollerResp, err := webAppsClient.BeginCreateOrUpdate(
 		ctx,
 		resourceGroupName,
@@ -147,9 +154,22 @@ func createWebApp(ctx context.Context, appServicePlanID string) (*armappservice.
 			Properties: &armappservice.SiteProperties{
 				ServerFarmID: to.Ptr(appServicePlanID),
 				SiteConfig: &armappservice.SiteConfig{
-					AlwaysOn: to.Ptr(true),
-
-					LinuxFxVersion: to.Ptr("DOCKER|yeasy/simple-web:latest"),
+					AlwaysOn:       to.Ptr(true),
+					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s:%s", dockerImage, tag)),
+					AppSettings: []*armappservice.NameValuePair{
+						{
+							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_URL"),
+							Value: to.Ptr(dockregServerURL),
+						},
+						{
+							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
+							Value: to.Ptr(dockregUsername),
+						},
+						{
+							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_PASSWORD"),
+							Value: to.Ptr(dockregPassword),
+						},
+					},
 				},
 				HTTPSOnly: to.Ptr(true),
 			},

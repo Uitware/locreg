@@ -11,32 +11,18 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-)
-
-var (
-	location           = "eastus"
-	resourceGroupName  = "sample-resource-group"
-	appServicePlanName = "sample-appservice-plan"
-	appServiceName     = "sample-appservice-app"
-	dockregServerURL   = "https://index.docker.io/v1/"
-	dockregUsername    = "username"
-	dockregPassword    = "password"
-	dockerImage        = "nginx"
-	tag                = "latest"
+	"locreg/pkg/parser"
 )
 
 var (
 	resourcesClientFactory  *armresources.ClientFactory
 	appserviceClientFactory *armappservice.ClientFactory
+	resourceGroupClient     *armresources.ResourceGroupsClient
+	plansClient             *armappservice.PlansClient
+	webAppsClient           *armappservice.WebAppsClient
 )
 
-var (
-	resourceGroupClient *armresources.ResourceGroupsClient
-	plansClient         *armappservice.PlansClient
-	webAppsClient       *armappservice.WebAppsClient
-)
-
-func Deploy() {
+func Deploy(azureConfig *parser.Config) {
 	log.Println("Starting deployment...")
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
@@ -65,46 +51,32 @@ func Deploy() {
 	plansClient = appserviceClientFactory.NewPlansClient()
 	webAppsClient = appserviceClientFactory.NewWebAppsClient()
 
-	resourceGroup, err := createResourceGroup(ctx)
+	resourceGroup, err := createResourceGroup(ctx, azureConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Resource group created:", *resourceGroup.ID)
 
-	appServicePlan, err := createAppServicePlan(ctx)
+	appServicePlan, err := createAppServicePlan(ctx, azureConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("App service plan created:", *appServicePlan.ID)
 
-	appService, err := createWebApp(ctx, dockregServerURL, dockregUsername, dockregPassword, *appServicePlan.ID)
+	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("App service created:", *appService.ID)
 }
 
-func getSubscriptionID() (string, error) {
-	cmd := exec.Command("az", "account", "show", "--query", "id", "--output", "json")
-	output, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	var result string
-	if err := json.Unmarshal(output, &result); err != nil {
-		return "", err
-	}
-
-	return result, nil
-}
-func createResourceGroup(ctx context.Context) (*armresources.ResourceGroup, error) {
+func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armresources.ResourceGroup, error) {
 	log.Println("Creating Resource Group...")
 	resourceGroupResp, err := resourceGroupClient.CreateOrUpdate(
 		ctx,
-		resourceGroupName,
+		azureConfig.Deploy.Provider.Azure.ResourceGroup,
 		armresources.ResourceGroup{
-			Location: to.Ptr(location),
+			Location: to.Ptr(azureConfig.Deploy.Provider.Azure.Location),
 		},
 		nil)
 	if err != nil {
@@ -113,21 +85,22 @@ func createResourceGroup(ctx context.Context) (*armresources.ResourceGroup, erro
 	return &resourceGroupResp.ResourceGroup, nil
 }
 
-func createAppServicePlan(ctx context.Context) (*armappservice.Plan, error) {
+func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*armappservice.Plan, error) {
 	log.Println("Creating App Service Plan...")
+	sku := azureConfig.Deploy.Provider.Azure.AppsServicePlan.SKU
 	pollerResp, err := plansClient.BeginCreateOrUpdate(
 		ctx,
-		resourceGroupName,
-		appServicePlanName,
+		azureConfig.Deploy.Provider.Azure.ResourceGroup,
+		azureConfig.Deploy.Provider.Azure.AppsServicePlan.Name,
 		armappservice.Plan{
-			Location: to.Ptr(location),
+			Location: to.Ptr(azureConfig.Deploy.Provider.Azure.Location),
 			SKU: &armappservice.SKUDescription{
-				Name:     to.Ptr("S1"),
-				Capacity: to.Ptr[int32](1),
-				Tier:     to.Ptr("Standard"),
+				Name:     to.Ptr(sku.Sku),
+				Capacity: to.Ptr[int32](int32(sku.Capacity)),
+				Tier:     to.Ptr(sku.Tier),
 			},
 			Properties: &armappservice.PlanProperties{
-				Reserved: to.Ptr(true),
+				Reserved: to.Ptr(azureConfig.Deploy.Provider.Azure.AppsServicePlan.PlanProperties.Reserved),
 			},
 		},
 		nil,
@@ -142,32 +115,33 @@ func createAppServicePlan(ctx context.Context) (*armappservice.Plan, error) {
 	return &resp.Plan, nil
 }
 
-func createWebApp(ctx context.Context, dockregServerURL, dockregUsername, dockregPassword, appServicePlanID string) (*armappservice.Site, error) {
+func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID string) (*armappservice.Site, error) {
 	log.Println("Creating Web App...")
+	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
 
 	pollerResp, err := webAppsClient.BeginCreateOrUpdate(
 		ctx,
-		resourceGroupName,
-		appServiceName,
+		azureConfig.Deploy.Provider.Azure.ResourceGroup,
+		azureConfig.Deploy.Provider.Azure.AppService.Name,
 		armappservice.Site{
-			Location: to.Ptr(location),
+			Location: to.Ptr(azureConfig.Deploy.Provider.Azure.Location),
 			Properties: &armappservice.SiteProperties{
 				ServerFarmID: to.Ptr(appServicePlanID),
 				SiteConfig: &armappservice.SiteConfig{
-					AlwaysOn:       to.Ptr(true),
-					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s:%s", dockerImage, tag)),
+					AlwaysOn:       to.Ptr(siteConfig.AlwaysOn),
+					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s:%s", siteConfig.DockerImage, siteConfig.Tag)),
 					AppSettings: []*armappservice.NameValuePair{
 						{
 							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_URL"),
-							Value: to.Ptr(dockregServerURL),
+							Value: to.Ptr(siteConfig.DockregServerURL),
 						},
 						{
 							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
-							Value: to.Ptr(dockregUsername),
+							Value: to.Ptr(siteConfig.DockregUsername),
 						},
 						{
 							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_PASSWORD"),
-							Value: to.Ptr(dockregPassword),
+							Value: to.Ptr(siteConfig.DockregPassword),
 						},
 					},
 				},
@@ -184,4 +158,19 @@ func createWebApp(ctx context.Context, dockregServerURL, dockregUsername, dockre
 		return nil, err
 	}
 	return &resp.Site, nil
+}
+
+func getSubscriptionID() (string, error) {
+	cmd := exec.Command("az", "account", "show", "--query", "id", "--output", "json")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+	if err := json.Unmarshal(output, &result); err != nil {
+		return "", err
+	}
+
+	return result, nil
 }

@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"locreg/pkg/parser"
+	"log"
 
 	"github.com/spf13/cobra"
-
 	"locreg/pkg/providers/aws"
 	"locreg/pkg/providers/azure"
 	"locreg/pkg/providers/gcp"
@@ -21,7 +22,14 @@ var deployCmd = &cobra.Command{
 		case "aws":
 			aws.Deploy()
 		case "azure":
-			azure.Deploy()
+			{
+				configFilePath := "config_example.yaml"
+				config, err := parser.LoadConfig(configFilePath)
+				if err != nil {
+					log.Fatalf("Error loading config: %v", err)
+				}
+				azure.Deploy(config)
+			}
 		case "gcp":
 			gcp.Deploy()
 		default:

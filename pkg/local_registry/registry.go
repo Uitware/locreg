@@ -1,4 +1,4 @@
-package main
+package local_registry
 
 import (
 	"bufio"
@@ -62,7 +62,7 @@ func initCommand() error {
 	if err != nil {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
-	return runDistribution(cli)
+	return runRegistry(cli)
 }
 
 func buildCommand(dir string) error {
@@ -74,7 +74,8 @@ func buildCommand(dir string) error {
 	return imageBuildAndPush(cli, dir)
 }
 
-func runDistribution(dockerClient *client.Client) error {
+// Registry
+func runRegistry(dockerClient *client.Client) error {
 	// run distribution registry container
 	ctx := context.Background()
 	registryPort := "5000"                                                   // Later should be taken from config and this variable deleted
@@ -135,7 +136,7 @@ func runDistribution(dockerClient *client.Client) error {
 
 func imageBuildAndPush(dockerClient *client.Client, dir string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	// TODO use config to set tag and port from runDistribution
+	// TODO use config to set tag and port from runRegistry
 	ImageTagString := "localhost:5000/test:latest"
 	authConfig := registry.AuthConfig{
 		Username:      "test",

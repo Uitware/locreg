@@ -8,16 +8,23 @@ Registry:
 Deploy:
   provider:
     azure:
-      resourceGroup: "myResourceGroup" # Resource group name
-      appsServicePlan:
-        name: "myAppServicePlan" # App service plan name
+      location: "East US" # Location of the all resources
+      resourceGroup: "VITALYAdasdasds" # Resource group name
+      appServicePlan:
+        name: "myAppServicePlanrqwerqwerqwe" # App service plan name
         SKU:
-          sku: "F1" # App service plan sku
+          sku: "S1" # App service plan sku
           capacity: 1 # App service plan capacity
-          tier: "Free" # App service plan tier
+          tier: "STANDART" # App service plan tier
         PlanProperties:
           reserved: true # App service plan reserved
       appService:
-        name: "myAppService" # App service name
+        name: "myAppServicerqwerqwerwe" # App service name
         SiteConfig:
           AlwaysOn: true # App service always on
+          dockregServerURL: "https://index.docker.io/v1/"
+          dockregUsername: "vitalikstelmah60"
+          dockregPassword : "Vitalya_3010"
+          dockerImage: "vitalikstelmah60/weather-app"
+          tag: "latest"
+

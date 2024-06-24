@@ -1,8 +1,9 @@
 package parser
 
 import (
+	"fmt"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"os"
 )
 
 type Config struct {
@@ -47,13 +48,15 @@ type Config struct {
 
 func LoadConfig(filePath string) (*Config, error) {
 	var config Config
-	data, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		return nil, err
+	data, err := os.ReadFile(filePath)
+	if err == nil {
+		// File exists, so we unmarshal it
+		err = yaml.Unmarshal(data, &config)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		fmt.Println("Config file not found, loading from environment variables")
 	}
 	return &config, nil
 }

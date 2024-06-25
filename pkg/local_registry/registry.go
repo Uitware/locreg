@@ -14,10 +14,10 @@ import (
 func RunRegistry(dockerClient *client.Client) error {
 	// run distribution registry container
 	ctx := context.Background()
-	registryPort := "5000"                                                   // Later should be taken from config and this variable deleted
-	registryVersion := "latest"                                              // Later should be taken from config
-	registryName := "my_registry"                                            // Later should be taken from config
-	imageVersion := fmt.Sprintf("distribution/registry:%s", registryVersion) // Later should be taken from config
+	registryPort := "5000"                                                   // TODO should be taken from config and this variable deleted
+	registryVersion := "latest"                                              // TODO should be taken from config
+	registryName := "my_registry"                                            // TODO should be taken from config
+	imageVersion := fmt.Sprintf("distribution/registry:%s", registryVersion) // TODO should be taken from config
 
 	// Will be created because it has a special type of nat.port
 	// Create specifically formated string for port mapping

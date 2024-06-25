@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+// TODO - refactor description
+
 var envCmd = &cobra.Command{
 	Use:   "env",
 	Short: "Manage environment values used by locreg tool",

@@ -124,6 +124,7 @@ func printLog(rd io.Reader) error {
 	return nil
 }
 
+// TODO - move usage to a separate file (where the short description resides)
 func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  locreg build [directory]  - Build the Docker image from the specified directory (default is current directory)")

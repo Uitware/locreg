@@ -26,34 +26,7 @@ type ErrorDetail struct {
 	Message string `json:"message"`
 }
 
-//func main() {
-//	if len(os.Args) < 2 {
-//		printUsage()
-//		return
-//	}
-//
-//	command := os.Args[1]
-//	switch command {
-//	case "build":
-//		dir := "."
-//		if len(os.Args) > 2 {
-//			dir = os.Args[2]
-//		}
-//		if err := buildCommand(dir); err != nil {
-//			fmt.Println("Error:", err.Error())
-//		}
-//	case "init":
-//		if err := initCommand(); err != nil {
-//			fmt.Println("Error:", err.Error())
-//		}
-//	default:
-//		fmt.Printf("Unknown command: %s\n", command)
-//		printUsage()
-//
-//	}
-//}
-
-func initCommand() error {
+func InitCommand() error {
 	// Setup local registry
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -62,7 +35,7 @@ func initCommand() error {
 	return RunRegistry(cli)
 }
 
-func buildCommand(dir string) error {
+func BuildCommand(dir string) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return fmt.Errorf("failed to create Docker client: %w", err)
@@ -79,12 +52,6 @@ func imageBuildAndPush(dockerClient *client.Client, dir string) error {
 		Password:      "test",
 		ServerAddress: "http://127.0.0.1:5000",
 	}
-	// unsuccessful test of using AuthConfig directly with ImagePush
-	//authConfig := types.AuthConfig{
-	//	Username:      "test",
-	//	Password:      "test",
-	//	ServerAddress: "http://127.0.0.1:5000",
-	//}
 
 	defer cancel()
 
@@ -125,13 +92,6 @@ func imageBuildAndPush(dockerClient *client.Client, dir string) error {
 
 		}
 	}(pushResponse)
-
-	// Read the push response
-	//_, err = io.Copy(os.Stdout, pushResponse)
-	//if err != nil {
-	//	fmt.Printf("Failed to read push response: %v\n", err)
-	//	return nil
-	//}
 
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()

@@ -5,7 +5,7 @@ registry:
   username: "myUsername" # Username for the registry
   password: "myPassword" # Password for the registry
 
-deployment:
+deploy:
   provider:
     azure:
       location: "East US" # Location of all resources
@@ -16,14 +16,12 @@ deployment:
           name: "S1" # App service plan SKU
           capacity: 1 # App service plan capacity
           tier: "STANDARD" # App service plan tier
-        properties:
+        planProperties:
           reserved: true # App service plan reserved
       appService:
         name: "myAppService" # App service name
         siteConfig:
           alwaysOn: true # App service always on
           dockerRegistryServerUrl: "https://index.docker.io/v1/"
-          dockerRegistryUsername: "myDockerUsername"
-          dockerRegistryPassword: "myDockerPassword"
           dockerImage: "myDockerUsername/myImage"
           tag: "latest"

@@ -87,11 +87,11 @@ func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armr
 
 func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*armappservice.Plan, error) {
 	log.Println("Creating App Service Plan...")
-	sku := azureConfig.Deploy.Provider.Azure.AppsServicePlan.SKU
+	sku := azureConfig.Deploy.Provider.Azure.AppServicePlan.Sku
 	pollerResp, err := plansClient.BeginCreateOrUpdate(
 		ctx,
 		azureConfig.Deploy.Provider.Azure.ResourceGroup,
-		azureConfig.Deploy.Provider.Azure.AppsServicePlan.Name,
+		azureConfig.Deploy.Provider.Azure.AppServicePlan.Name,
 		armappservice.Plan{
 			Location: to.Ptr(azureConfig.Deploy.Provider.Azure.Location),
 			SKU: &armappservice.SKUDescription{
@@ -100,7 +100,7 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 				Tier:     to.Ptr(sku.Tier),
 			},
 			Properties: &armappservice.PlanProperties{
-				Reserved: to.Ptr(azureConfig.Deploy.Provider.Azure.AppsServicePlan.PlanProperties.Reserved),
+				Reserved: to.Ptr(azureConfig.Deploy.Provider.Azure.AppServicePlan.PlanProperties.Reserved),
 			},
 		},
 		nil,
@@ -117,6 +117,7 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 
 func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID string) (*armappservice.Site, error) {
 	log.Println("Creating Web App...")
+
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
 
 	pollerResp, err := webAppsClient.BeginCreateOrUpdate(
@@ -133,15 +134,15 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 					AppSettings: []*armappservice.NameValuePair{
 						{
 							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_URL"),
-							Value: to.Ptr(siteConfig.DockregServerURL),
+							Value: to.Ptr(siteConfig.DockerRegistryServerUrl),
 						},
 						{
 							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
-							Value: to.Ptr(siteConfig.DockregUsername),
+							Value: to.Ptr(siteConfig.DockerRegistryUsername),
 						},
 						{
 							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_PASSWORD"),
-							Value: to.Ptr(siteConfig.DockregPassword),
+							Value: to.Ptr(siteConfig.DockerRegistryPassword),
 						},
 					},
 				},

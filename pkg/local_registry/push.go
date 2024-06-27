@@ -7,14 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
-	"io"
-	"time"
-
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
+	"io"
+	"locreg/pkg/parser" // Імпорт пакету parser для використання структури Config
+	"time"
 )
 
 type ErrorLine struct {
@@ -26,81 +26,70 @@ type ErrorDetail struct {
 	Message string `json:"message"`
 }
 
-func InitCommand() error {
-	// Setup local registry
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func BuildCommand(configFilePath string, dir string) error {
+	config, err := parser.LoadConfig(configFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to create Docker client: %w", err)
+		return fmt.Errorf("failed to load config: %w", err)
 	}
-	return RunRegistry(cli)
-}
 
-func BuildCommand(dir string) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
 
-	return imageBuildAndPush(cli, dir)
+	return imageBuildAndPush(cli, dir, config)
 }
-func imageBuildAndPush(dockerClient *client.Client, dir string) error {
+
+func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.Config) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	// TODO use config to set tag and port from runRegistry
-	ImageTagString := "localhost:5000/test:latest"
-	authConfig := registry.AuthConfig{
-		Username:      "test",
-		Password:      "test",
-		ServerAddress: "http://127.0.0.1:5000",
-	}
-
 	defer cancel()
+
+	ImageTagString := fmt.Sprintf("localhost:%d/%s:%s", config.Registry.Port, config.Image.Name, config.Image.Tag)
+	authConfig := registry.AuthConfig{
+		Username:      config.Registry.Username,
+		Password:      config.Registry.Password,
+		ServerAddress: fmt.Sprintf("http://127.0.0.1:%d", config.Registry.Port),
+	}
 
 	tar, err := archive.TarWithOptions(dir, &archive.TarOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to create tar archive: %w", err)
 	}
 
-	opts := types.ImageBuildOptions{
+	buildOpts := types.ImageBuildOptions{
 		Dockerfile: "Dockerfile",
 		Tags:       []string{ImageTagString},
 		Remove:     true,
 	}
-	res, err := dockerClient.ImageBuild(ctx, tar, opts)
+	buildResponse, err := dockerClient.ImageBuild(ctx, tar, buildOpts)
 	if err != nil {
 		return fmt.Errorf("failed to build image: %w", err)
 	}
+	defer buildResponse.Body.Close()
 
-	// Login into registry and push image
-	_, err = dockerClient.RegistryLogin(ctx, authConfig)
-	if err != nil {
-		return err
+	if err := printLog(buildResponse.Body); err != nil {
+		return fmt.Errorf("error during image build: %w", err)
 	}
 
-	encodedJSON, _ := json.Marshal(authConfig)
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		return fmt.Errorf("failed to encode auth config: %w", err)
+	}
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
 	pushResponse, err := dockerClient.ImagePush(ctx, ImageTagString, image.PushOptions{
 		RegistryAuth: authStr,
 	})
 	if err != nil {
-		fmt.Printf("Failed to push image: %v\n", err)
-		return nil
+		return fmt.Errorf("failed to push image: %w", err)
 	}
-	defer func(pushResponse io.ReadCloser) {
-		err := pushResponse.Close()
-		if err != nil {
+	defer pushResponse.Close()
 
-		}
-	}(pushResponse)
+	if err := printLog(pushResponse); err != nil {
+		return fmt.Errorf("error during image push: %w", err)
+	}
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
-	}(res.Body)
-
-	return printLog(pushResponse)
+	return nil
 }
 
 func printLog(rd io.Reader) error {
@@ -122,10 +111,4 @@ func printLog(rd io.Reader) error {
 	}
 
 	return nil
-}
-
-// TODO - move usage to a separate file (where the short description resides)
-func printUsage() {
-	fmt.Println("Usage:")
-	fmt.Println("  locreg build [directory]  - Build the Docker image from the specified directory (default is current directory)")
 }

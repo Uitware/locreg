@@ -1,15 +1,12 @@
 package local_registry
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"golang.org/x/crypto/bcrypt"
 	"io"
 	"locreg/pkg/parser"
 	"log"
@@ -77,148 +74,6 @@ func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
 	fmt.Printf("Container started with ID: %s\n", resp.ID)
 	return nil
 }
-
-func updateConfig(
-	dockerClient *client.Client,
-	ctx context.Context,
-	containerID, username, password string,
-) error {
-	// Password configuration for registry should be hashed using bcrypt
-	//credsTarBuffer, err := prepareCreds()
-	//if err != nil {
-	//	return fmt.Errorf("fatal error: %w", err)
-	//}
-	// Config file path inside the container
-	// Prepare credentials
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
-	}
-	creds := fmt.Sprintf("%s:%s\n", username, hashedPassword)
-	credsTarBuffer, err := prepareCreds(creds, "htpasswd")
-	// Docker config variables
-	containerConfigPath := "/etc/docker/registry/config.yml"
-	configUpdates := `
-auth:  
-  htpasswd:
-    realm: basic-realm    
-    path: /htpasswd
-` // May want to use structs later
-
-	//Read from config
-	reader, _, err := dockerClient.CopyFromContainer(
-		ctx,
-		containerID,
-		containerConfigPath,
-	)
-	if err != nil {
-		return fmt.Errorf("copy from container: %w", err)
-	}
-	defer reader.Close()
-
-	tarReader := tar.NewReader(reader)
-	var yamlBytes []byte
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break // End of archive
-		}
-		if err != nil {
-			return fmt.Errorf("error reading tar file: %v", err)
-		}
-		if header.Name == "config.yml" {
-			yamlBytes, err = io.ReadAll(tarReader)
-			if err != nil {
-				return fmt.Errorf("error reading config.yml: %v", err)
-			}
-			break
-		}
-	}
-	// May use structs instead of this string manipulation
-	fmt.Println(string(yamlBytes) + configUpdates)
-	configTarBuffer, err := prepareCreds(string(yamlBytes)+configUpdates, "config.yml")
-
-	// Write the updated config back to the container
-	err = dockerClient.CopyToContainer(
-		ctx,
-		containerID,
-		"/",
-		credsTarBuffer,
-		container.CopyToContainerOptions{},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to copy to container: %w", err)
-	}
-	err = dockerClient.CopyToContainer(
-		ctx,
-		containerID,
-		"/etc/docker/registry/",
-		configTarBuffer,
-		container.CopyToContainerOptions{},
-	)
-	if err != nil {
-		return fmt.Errorf("copy to container: %w", err)
-	}
-
-	return nil
-}
-
-// prepareCreds creates a tar archive with the htpasswd file data inside it stored in same way as htpasswd -Bnb command does
-func prepareCreds(fileContent, fileName string) (*bytes.Buffer, error) {
-	var buf bytes.Buffer
-	// Create a tar writer
-	tw := tar.NewWriter(&buf)
-
-	// Add a file to the tar archive
-	hdr := &tar.Header{
-		Name: fileName,
-		Mode: 0600,
-		Size: int64(len(fileContent)),
-	}
-	if err := tw.WriteHeader(hdr); err != nil {
-		return nil, fmt.Errorf("failed to write tar header: %w", err)
-	}
-	if _, err := tw.Write([]byte(fileContent)); err != nil {
-		return nil, fmt.Errorf("failed to write file content to tar: %w", err)
-	}
-	if err := tw.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close tar writer: %w", err)
-	}
-	return &buf, nil
-}
-
-//func prepareCreds(username, password string) (*bytes.Buffer, error) {
-//	var buf bytes.Buffer
-//
-//	// Create a tar writer
-//	tw := tar.NewWriter(&buf)
-//
-//	// Hash the password using bcrypt
-//	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-//	if err != nil {
-//		return nil, fmt.Errorf("failed to hash password: %w", err)
-//	}
-//
-//	// Create the content similar to htpasswd -Bnb
-//	fileContent := fmt.Sprintf("%s:%s\n", username, hashedPassword)
-//
-//	// Add a file to the tar archive
-//	hdr := &tar.Header{
-//		Name: "htpasswd",
-//		Mode: 0600,
-//		Size: int64(len(fileContent)),
-//	}
-//	if err := tw.WriteHeader(hdr); err != nil {
-//		return nil, fmt.Errorf("failed to write tar header: %w", err)
-//	}
-//	if _, err := tw.Write([]byte(fileContent)); err != nil {
-//		return nil, fmt.Errorf("failed to write file content to tar: %w", err)
-//	}
-//	if err := tw.Close(); err != nil {
-//		return nil, fmt.Errorf("failed to close tar writer: %w", err)
-//	}
-//	return &buf, nil
-//}
 
 func InitCommand(configFilePath string) error {
 	config, err := parser.LoadConfig(configFilePath)

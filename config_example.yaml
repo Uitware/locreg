@@ -1,9 +1,15 @@
 registry:
-  port: 5555 # Port to run the registry on and to which the tunnel will be forwarded
-  tag: "latest" # Tag to be used for the image
-  image: "myImage" # Image name
-  username: "myUsername" # Username for the registry
-  password: "myPassword" # Password for the registry
+  port: 5555
+  tag: "2"
+  image: "registry"
+  name: "my-registry"
+  username: "myUsername"
+  password: "myPassword"
+
+image:
+  name: "weather-app"
+  tag: "latest"
+
 
 deploy:
   provider:

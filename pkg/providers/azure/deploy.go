@@ -95,7 +95,7 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 		armappservice.Plan{
 			Location: to.Ptr(azureConfig.Deploy.Provider.Azure.Location),
 			SKU: &armappservice.SKUDescription{
-				Name:     to.Ptr(sku.Sku),
+				Name:     to.Ptr(sku.Name),
 				Capacity: to.Ptr[int32](int32(sku.Capacity)),
 				Tier:     to.Ptr(sku.Tier),
 			},
@@ -138,11 +138,11 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 						},
 						{
 							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
-							Value: to.Ptr(siteConfig.DockerRegistryUsername),
+							Value: to.Ptr(azureConfig.Registry.Username),
 						},
 						{
 							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_PASSWORD"),
-							Value: to.Ptr(siteConfig.DockerRegistryPassword),
+							Value: to.Ptr(azureConfig.Registry.Password),
 						},
 					},
 				},

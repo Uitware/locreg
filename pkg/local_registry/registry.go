@@ -8,20 +8,21 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"io"
+	"locreg/pkg/parser"
 )
 
-// Registry
-func RunRegistry(dockerClient *client.Client) error {
-	// run distribution registry container
+// RunRegistry runs a local Docker registry container with configuration
+func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
+	// Use configuration values
 	ctx := context.Background()
-	registryPort := "5000"                                                   // TODO should be taken from config and this variable deleted
-	registryVersion := "latest"                                              // TODO should be taken from config
-	registryName := "my_registry"                                            // TODO should be taken from config
-	imageVersion := fmt.Sprintf("distribution/registry:%s", registryVersion) // TODO should be taken from config
+	registryPort := fmt.Sprintf("%d", config.Registry.Port)
+	containerPort := "5000"
+	registryVersion := config.Registry.Tag
+	registryName := config.Registry.Name
+	imageVersion := fmt.Sprintf("%s:%s", config.Registry.Image, registryVersion)
 
-	// Will be created because it has a special type of nat.port
-	// Create specifically formated string for port mapping
-	port, err := nat.NewPort("tcp", registryPort)
+	// Create specifically formatted string for port mapping
+	port, err := nat.NewPort("tcp", containerPort)
 	if err != nil {
 		return fmt.Errorf("failed to create port: %w", err)
 	}
@@ -68,4 +69,18 @@ func RunRegistry(dockerClient *client.Client) error {
 	}
 	fmt.Printf("Container started with ID: %s\n", resp.ID)
 	return nil
+}
+
+func InitCommand(configFilePath string) error {
+	// Завантаження конфігураційного файлу
+	config, err := parser.LoadConfig(configFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("failed to create Docker client: %w", err)
+	}
+	return RunRegistry(cli, config)
 }

@@ -11,10 +11,15 @@ type Config struct {
 	Registry struct {
 		Port     int    `yaml:"port" validate:"required"`
 		Tag      string `yaml:"tag" validate:"required"`
+		Name     string `yaml:"name" validate:"required"`
 		Image    string `yaml:"image" validate:"required"`
 		Username string `yaml:"username" validate:"required"`
 		Password string `yaml:"password" validate:"required"`
 	} `yaml:"registry"`
+	Image struct {
+		Name string `yaml:"name" validate:"required"`
+		Tag  string `yaml:"tag" validate:"required"`
+	} `yaml:"image"`
 	Deploy struct {
 		Provider struct {
 			Azure struct {
@@ -23,7 +28,7 @@ type Config struct {
 				AppServicePlan struct {
 					Name string `yaml:"name" validate:"required"`
 					Sku  struct {
-						Sku      string `yaml:"name" validate:"required"`
+						Name     string `yaml:"name" validate:"required"`
 						Capacity int    `yaml:"capacity" validate:"required"`
 						Tier     string `yaml:"tier" validate:"required"`
 					} `yaml:"sku"`

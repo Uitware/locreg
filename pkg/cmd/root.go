@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// TODO - refactor description
+
 var rootCmd = &cobra.Command{
 	Use:   "locreg",
 	Short: "locreg is a CLI tool for managing deployments and tunnels",

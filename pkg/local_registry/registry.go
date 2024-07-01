@@ -14,10 +14,10 @@ import (
 )
 
 // RunRegistry runs a local Docker registry container with configuration
-func runRegistry(dockerClient *client.Client, config *parser.Config) error {
+func runRegistry(dockerClient *client.Client, ctx context.Context, config *parser.Config) error {
 
 	// Use configuration values
-	ctx := context.Background()
+
 	registryPort := fmt.Sprintf("%d", config.Registry.Port)
 	imageVersion := fmt.Sprintf("docker.io/%s:%s", config.Registry.Image, config.Registry.Tag)
 	containerPort := "5000"
@@ -61,8 +61,6 @@ func runRegistry(dockerClient *client.Client, config *parser.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to create distribution container: %w", err)
 	}
-	config.Registry.Username = ""
-	config.Registry.Password = ""
 
 	err = updateConfig(dockerClient, ctx, resp.ID, config.Registry.Username, config.Registry.Password)
 	if err != nil {
@@ -75,19 +73,11 @@ func runRegistry(dockerClient *client.Client, config *parser.Config) error {
 	}
 	fmt.Printf("Container started with ID: %s\n", resp.ID)
 
-	// TODO fix this part
-	//if config.Registry.Username == "" || config.Registry.Password == "" {
-	//	logsReader, err := dockerClient.ContainerLogs(ctx, resp.ID, container.LogsOptions{ShowStderr: true, ShowStdout: true})
-	//	if err != nil {
-	//		return fmt.Errorf("failed to get password form container logs: %w", err)
-	//	}
-	//	logs, _ := io.ReadAll(logsReader)
-	//	fmt.Println(string(logs))
-	//}
 	return nil
 }
 
 func InitCommand(configFilePath string) error {
+	ctx := context.Background()
 	config, err := parser.LoadConfig(configFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
@@ -97,5 +87,19 @@ func InitCommand(configFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
-	return runRegistry(cli, config)
+	return runRegistry(cli, ctx, config)
+}
+
+func RotateCommand(configFilePath string) error {
+	ctx := context.Background()
+	config, err := parser.LoadConfig(configFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("failed to create Docker client: %w", err)
+	}
+	return RotateCreds(cli, ctx, config.Registry.Username, config.Registry.Password, config.Registry.Name)
 }

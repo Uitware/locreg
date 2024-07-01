@@ -18,12 +18,25 @@ func updateConfig(
 ) error {
 	// Prepare credentials
 	// Password configuration for registry should be hashed using bcrypt
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
+	if username != "" || password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("failed to hash password: %w", err)
+		}
+		creds := fmt.Sprintf("%s:%s\n", username, hashedPassword)
+		credsTarBuffer, err := prepareTar(creds, "htpasswd")
+		// Write password file to container
+		err = dockerClient.CopyToContainer(
+			ctx,
+			containerID,
+			"/",
+			credsTarBuffer,
+			container.CopyToContainerOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to copy to container: %w", err)
+		}
 	}
-	creds := fmt.Sprintf("%s:%s\n", username, hashedPassword)
-	credsTarBuffer, err := prepareTar(creds, "htpasswd")
 	// Docker config variables
 	configUpdates := `
 auth:  
@@ -65,17 +78,7 @@ auth:
 	// May use structs instead of this string manipulation
 	configTarBuffer, err := prepareTar(string(yamlBytes)+configUpdates, "config.yml")
 
-	// Write the updated config back to the container
-	err = dockerClient.CopyToContainer(
-		ctx,
-		containerID,
-		"/",
-		credsTarBuffer,
-		container.CopyToContainerOptions{},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to copy to container: %w", err)
-	}
+	// Write config back to	container
 	err = dockerClient.CopyToContainer(
 		ctx,
 		containerID,
@@ -90,7 +93,7 @@ auth:
 	return nil
 }
 
-// prepareCreds creates a tar archive with the htpasswd file data inside it stored in same way as htpasswd -Bnb command does
+// prepareTar creates a tar archive with the htpasswd file data inside it stored in same way as htpasswd -Bnb command does
 func prepareTar(fileContent, fileName string) (*bytes.Buffer, error) {
 	var buf bytes.Buffer
 	// Create a tar writer

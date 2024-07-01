@@ -61,6 +61,8 @@ func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to create distribution container: %w", err)
 	}
+	config.Registry.Username = ""
+	config.Registry.Password = ""
 
 	err = updateConfig(dockerClient, ctx, resp.ID, config.Registry.Username, config.Registry.Password)
 	if err != nil {
@@ -72,6 +74,16 @@ func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
 		return fmt.Errorf("failed to start distribution container: %w", err)
 	}
 	fmt.Printf("Container started with ID: %s\n", resp.ID)
+
+	// TODO fix this part
+	//if config.Registry.Username == "" || config.Registry.Password == "" {
+	//	logsReader, err := dockerClient.ContainerLogs(ctx, resp.ID, container.LogsOptions{ShowStderr: true, ShowStdout: true})
+	//	if err != nil {
+	//		return fmt.Errorf("failed to get password form container logs: %w", err)
+	//	}
+	//	logs, _ := io.ReadAll(logsReader)
+	//	fmt.Println(string(logs))
+	//}
 	return nil
 }
 

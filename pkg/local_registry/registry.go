@@ -14,7 +14,7 @@ import (
 )
 
 // RunRegistry runs a local Docker registry container with configuration
-func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
+func runRegistry(dockerClient *client.Client, config *parser.Config) error {
 
 	// Use configuration values
 	ctx := context.Background()
@@ -97,5 +97,5 @@ func InitCommand(configFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
-	return RunRegistry(cli, config)
+	return runRegistry(cli, config)
 }

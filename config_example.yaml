@@ -4,7 +4,7 @@ registry:
   image: "registry"
   name: "my-registry"
   username: "myUsername"
-  password: "myPassword"
+  password: "myPassword" # Must be bcrypt encrypted password
 
 image:
   name: "weather-app"

@@ -9,17 +9,18 @@ import (
 	"github.com/docker/go-connections/nat"
 	"io"
 	"locreg/pkg/parser"
+	"log"
+	"os"
 )
 
 // RunRegistry runs a local Docker registry container with configuration
-func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
+func runRegistry(dockerClient *client.Client, ctx context.Context, config *parser.Config) error {
+
 	// Use configuration values
-	ctx := context.Background()
+
 	registryPort := fmt.Sprintf("%d", config.Registry.Port)
+	imageVersion := fmt.Sprintf("docker.io/%s:%s", config.Registry.Image, config.Registry.Tag)
 	containerPort := "5000"
-	registryVersion := config.Registry.Tag
-	registryName := config.Registry.Name
-	imageVersion := fmt.Sprintf("%s:%s", config.Registry.Image, registryVersion)
 
 	// Create specifically formatted string for port mapping
 	port, err := nat.NewPort("tcp", containerPort)
@@ -36,15 +37,13 @@ func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
 	}
 
 	imagePuller, err := dockerClient.ImagePull(ctx, imageVersion, image.PullOptions{})
+	log.Default()
 	if err != nil {
+		log.Default()
 		return fmt.Errorf("failed to pull distribution image: %w", err)
 	}
-	defer func(imagePuller io.ReadCloser) {
-		err := imagePuller.Close()
-		if err != nil {
-			fmt.Printf("Failed to close image pull: %v\n", err)
-		}
-	}(imagePuller)
+	defer imagePuller.Close()
+	io.Copy(os.Stdout, imagePuller)
 
 	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
 		Image: imageVersion, // Local registry image
@@ -57,10 +56,15 @@ func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
 		},
 		nil,
 		nil,
-		registryName,
+		config.Registry.Name,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create distribution container: %w", err)
+	}
+
+	err = updateConfig(dockerClient, ctx, resp.ID, config.Registry.Username, config.Registry.Password)
+	if err != nil {
+		return fmt.Errorf("failed to update config: %w", err)
 	}
 
 	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
@@ -68,11 +72,12 @@ func RunRegistry(dockerClient *client.Client, config *parser.Config) error {
 		return fmt.Errorf("failed to start distribution container: %w", err)
 	}
 	fmt.Printf("Container started with ID: %s\n", resp.ID)
+
 	return nil
 }
 
 func InitCommand(configFilePath string) error {
-	// Завантаження конфігураційного файлу
+	ctx := context.Background()
 	config, err := parser.LoadConfig(configFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
@@ -82,5 +87,19 @@ func InitCommand(configFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
-	return RunRegistry(cli, config)
+	return runRegistry(cli, ctx, config)
+}
+
+func RotateCommand(configFilePath string) error {
+	ctx := context.Background()
+	config, err := parser.LoadConfig(configFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("failed to create Docker client: %w", err)
+	}
+	return RotateCreds(cli, ctx, config.Registry.Username, config.Registry.Password, config.Registry.Name)
 }

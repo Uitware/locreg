@@ -69,7 +69,7 @@ func Deploy(azureConfig *parser.Config) {
 	}
 	log.Println("App service created:", *appService.ID)
 
-	err = writeProfile(*resourceGroup.ID, *appServicePlan.ID, *appService.ID)
+	err = writeProfile(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)
 	if err != nil {
 		log.Fatalf("Failed to write profile: %v", err)
 	}
@@ -181,7 +181,7 @@ func getSubscriptionID() (string, error) {
 	return result, nil
 }
 
-func writeProfile(resourceGroupID, appServicePlanID, appServiceID string) error {
+func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) error {
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
 		return fmt.Errorf("failed to get profile path: %w", err)
@@ -192,9 +192,9 @@ func writeProfile(resourceGroupID, appServicePlanID, appServiceID string) error 
 		return fmt.Errorf("failed to load or create profile: %w", err)
 	}
 
-	profile.CloudResources.ResourceGroupID = resourceGroupID
-	profile.CloudResources.AppServicePlanID = appServicePlanID
-	profile.CloudResources.AppServiceID = appServiceID
+	profile.CloudResources.ResourceGroupName = resourceGroupName
+	profile.CloudResources.AppServicePlanName = appServicePlanName
+	profile.CloudResources.AppServiceName = appServiceName
 
 	err = parser.SaveProfile(profile, profilePath)
 	if err != nil {

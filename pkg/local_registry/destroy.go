@@ -11,7 +11,7 @@ import (
 )
 
 // StopAndRemoveContainer stops and removes a Docker container
-func StopAndRemoveContainer(containerName string) error {
+func StopAndRemoveContainer(containerID string) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return fmt.Errorf("failed to create Docker client: %w", err)
@@ -20,12 +20,12 @@ func StopAndRemoveContainer(containerName string) error {
 	ctx := context.Background()
 
 	stopOptions := container.StopOptions{
-		Timeout: nil, // Використовуємо стандартний таймаут
+		Timeout: nil, // Use default timeout
 	}
 
-	if err := cli.ContainerStop(ctx, containerName, stopOptions); err != nil {
-		log.Printf("Unable to stop container %s: %s", containerName, err)
-		// Продовжуємо виконання, навіть якщо контейнер не вдалося зупинити
+	if err := cli.ContainerStop(ctx, containerID, stopOptions); err != nil {
+		log.Printf("Unable to stop container %s: %s", containerID, err)
+		// Continue execution even if container couldn't be stopped
 	}
 
 	removeOptions := container.RemoveOptions{
@@ -33,15 +33,30 @@ func StopAndRemoveContainer(containerName string) error {
 		Force:         true,
 	}
 
-	if err := cli.ContainerRemove(ctx, containerName, removeOptions); err != nil {
+	if err := cli.ContainerRemove(ctx, containerID, removeOptions); err != nil {
 		log.Printf("Unable to remove container: %s", err)
 		return err
 	}
 
-	fmt.Printf("Container %s stopped and removed\n", containerName)
+	fmt.Printf("Container %s stopped and removed\n", containerID)
 	return nil
 }
 
-func DestroyLocalRegistry(config *parser.Config) error {
-	return StopAndRemoveContainer(config.Registry.Name)
+// DestroyLocalRegistry stops and removes the local Docker registry based on the ID stored in the profile
+func DestroyLocalRegistry() error {
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		return fmt.Errorf("failed to get profile path: %w", err)
+	}
+
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		return fmt.Errorf("failed to load or create profile: %w", err)
+	}
+
+	if profile.LocalRegistry.RegistryID == "" {
+		return fmt.Errorf("registry ID not found in profile")
+	}
+
+	return StopAndRemoveContainer(profile.LocalRegistry.RegistryID)
 }

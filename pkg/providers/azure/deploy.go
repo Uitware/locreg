@@ -68,6 +68,11 @@ func Deploy(azureConfig *parser.Config) {
 		log.Fatal(err)
 	}
 	log.Println("App service created:", *appService.ID)
+
+	err = writeProfile(*resourceGroup.ID, *appServicePlan.ID, *appService.ID)
+	if err != nil {
+		log.Fatalf("Failed to write profile: %v", err)
+	}
 }
 
 func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armresources.ResourceGroup, error) {
@@ -174,4 +179,27 @@ func getSubscriptionID() (string, error) {
 	}
 
 	return result, nil
+}
+
+func writeProfile(resourceGroupID, appServicePlanID, appServiceID string) error {
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		return fmt.Errorf("failed to get profile path: %w", err)
+	}
+
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		return fmt.Errorf("failed to load or create profile: %w", err)
+	}
+
+	profile.CloudResources.ResourceGroupID = resourceGroupID
+	profile.CloudResources.AppServicePlanID = appServicePlanID
+	profile.CloudResources.AppServiceID = appServiceID
+
+	err = parser.SaveProfile(profile, profilePath)
+	if err != nil {
+		return fmt.Errorf("failed to save profile: %w", err)
+	}
+
+	return nil
 }

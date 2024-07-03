@@ -9,8 +9,10 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0
 	github.com/docker/docker v27.0.1+incompatible
 	github.com/docker/go-connections v0.5.0
+	github.com/pelletier/go-toml v1.9.5
 	github.com/spf13/cobra v1.8.1
 	golang.ngrok.com/ngrok v1.9.1
+	golang.org/x/crypto v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -57,7 +59,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.27.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.ngrok.com/muxado/v2 v2.0.0 // indirect
-	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect

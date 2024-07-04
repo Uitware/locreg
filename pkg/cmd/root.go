@@ -24,4 +24,5 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize()
+	rootCmd.Root().CompletionOptions.DisableDefaultCmd = true
 }

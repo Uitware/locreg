@@ -14,7 +14,7 @@ var registryCmd = &cobra.Command{
 	Short: "Run a local Docker registry",
 	Long:  `This command runs a local Docker registry using Docker.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		configFilePath := "config.yaml"
+		configFilePath := "locreg.yaml"
 		exePath, err := os.Executable()
 		if err != nil {
 			log.Fatalf("Failed to get executable path: %v", err)
@@ -37,7 +37,7 @@ var rotateCmd = &cobra.Command{
 	Short: "Rotate credentials of the local Docker registry",
 	Long:  `This command rotates the credentials of the local Docker registry.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		configFilePath := "config.yaml"
+		configFilePath := "locreg.yaml"
 		err := local_registry.RotateCommand(configFilePath)
 		if err != nil {
 			fmt.Println("Error rotating registry credentials:", err)

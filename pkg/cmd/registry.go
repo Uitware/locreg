@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"locreg/pkg/local_registry"
+	"locreg/pkg/tunnels/ngrok"
 )
 
 var registryCmd = &cobra.Command{
@@ -12,7 +13,13 @@ var registryCmd = &cobra.Command{
 	Long:  `This command runs a local Docker registry using Docker.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		configFilePath := "config.yaml"
-		err := local_registry.InitCommand(configFilePath)
+		err := ngrok.StartTunnel(configFilePath)
+		if err != nil {
+			fmt.Println("Error running tunnel:", err)
+		} else {
+			fmt.Println("tunnel is running.")
+		}
+		err = local_registry.InitCommand(configFilePath)
 		if err != nil {
 			fmt.Println("Error running registry:", err)
 		} else {

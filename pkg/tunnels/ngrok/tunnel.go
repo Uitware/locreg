@@ -13,7 +13,7 @@ import (
 	"syscall"
 )
 
-func StartTunnel(configFilePath string) error {
+func StartTunnel(configFilePath string) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -43,7 +43,7 @@ func StartTunnel(configFilePath string) error {
 		}
 	}()
 	wg.Wait()
-	return nil
+	return
 }
 
 func runTunnel(ctx context.Context, registryConfig *parser.Config) error {

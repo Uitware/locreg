@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -125,6 +126,35 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
 
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get profile path: %w", err)
+	}
+
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load or create profile: %w", err)
+	}
+
+	// Remove 'https://' prefix from the tunnel URL
+
+	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
+	dockerRegistryURL := profile.Tunnel.URL
+	appSettings := []*armappservice.NameValuePair{
+		{
+			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_URL"),
+			Value: to.Ptr(dockerRegistryURL), // Use the tunnel URL from profile without 'https://'
+		},
+		{
+			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
+			Value: to.Ptr(profile.LocalRegistry.Username),
+		},
+		{
+			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_PASSWORD"),
+			Value: to.Ptr(profile.LocalRegistry.Password),
+		},
+	}
+
 	pollerResp, err := webAppsClient.BeginCreateOrUpdate(
 		ctx,
 		azureConfig.Deploy.Provider.Azure.ResourceGroup,
@@ -135,21 +165,8 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 				ServerFarmID: to.Ptr(appServicePlanID),
 				SiteConfig: &armappservice.SiteConfig{
 					AlwaysOn:       to.Ptr(siteConfig.AlwaysOn),
-					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s:%s", siteConfig.DockerImage, siteConfig.Tag)),
-					AppSettings: []*armappservice.NameValuePair{
-						{
-							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_URL"),
-							Value: to.Ptr(siteConfig.DockerRegistryServerUrl),
-						},
-						{
-							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
-							Value: to.Ptr(azureConfig.Registry.Username),
-						},
-						{
-							Name:  to.Ptr("DOCKER_REGISTRY_SERVER_PASSWORD"),
-							Value: to.Ptr(azureConfig.Registry.Password),
-						},
-					},
+					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s/%s:%s", tunnelURL, siteConfig.DockerImage, siteConfig.Tag)),
+					AppSettings:    appSettings,
 				},
 				HTTPSOnly: to.Ptr(true),
 			},

@@ -13,7 +13,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"io"
-	"locreg/pkg/parser" // Імпорт пакету parser для використання структури Config
+	"locreg/pkg/parser"
 	"time"
 )
 

@@ -41,8 +41,6 @@ type Config struct {
 					SiteConfig struct {
 						AlwaysOn                bool   `yaml:"alwaysOn" validate:"required"`
 						DockerRegistryServerUrl string `yaml:"dockerRegistryServerUrl" validate:"required"`
-						DockerRegistryUsername  string `yaml:"dockerRegistryUsername" validate:"required"`
-						DockerRegistryPassword  string `yaml:"dockerRegistryPassword" validate:"required"`
 						DockerImage             string `yaml:"dockerImage" validate:"required"`
 						Tag                     string `yaml:"tag" validate:"required"`
 					} `yaml:"siteConfig"`

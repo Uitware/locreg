@@ -1,6 +1,7 @@
 .idea/
 locreg
 config.yaml
+Dockerfile
 
 # Created by https://www.toptal.com/developers/gitignore/api/goland,go,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=goland,go,visualstudiocode

@@ -3,21 +3,20 @@ package local_registry
 import (
 	"context"
 	"fmt"
+	"io"
+	"locreg/pkg/parser"
+	"os"
+
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"io"
-	"locreg/pkg/parser"
-	"log"
-	"os"
 )
 
 // RunRegistry runs a local Docker registry container with configuration
 func runRegistry(dockerClient *client.Client, ctx context.Context, config *parser.Config) error {
 
 	// Use configuration values
-
 	registryPort := fmt.Sprintf("%d", config.Registry.Port)
 	imageVersion := fmt.Sprintf("docker.io/%s:%s", config.Registry.Image, config.Registry.Tag)
 	containerPort := "5000"
@@ -37,9 +36,7 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 	}
 
 	imagePuller, err := dockerClient.ImagePull(ctx, imageVersion, image.PullOptions{})
-	log.Default()
 	if err != nil {
-		log.Default()
 		return fmt.Errorf("failed to pull distribution image: %w", err)
 	}
 	defer imagePuller.Close()
@@ -73,6 +70,11 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 	}
 	fmt.Printf("Container started with ID: %s\n", resp.ID)
 
+	err = writeProfile(resp.ID, config.Registry.Username, config.Registry.Password)
+	if err != nil {
+		return fmt.Errorf("failed to write profile: %w", err)
+	}
+
 	return nil
 }
 
@@ -102,4 +104,28 @@ func RotateCommand(configFilePath string) error {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
 	return RotateCreds(cli, ctx, config.Registry.Username, config.Registry.Password, config.Registry.Name)
+}
+
+// writeProfile writes the container ID and credentials to the profile file in TOML format
+func writeProfile(containerID, username, password string) error {
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		return fmt.Errorf("failed to get profile path: %w", err)
+	}
+
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		return fmt.Errorf("failed to load or create profile: %w", err)
+	}
+
+	profile.LocalRegistry.RegistryID = containerID
+	profile.LocalRegistry.Username = username
+	profile.LocalRegistry.Password = password
+
+	err = parser.SaveProfile(profile, profilePath)
+	if err != nil {
+		return fmt.Errorf("failed to save profile: %w", err)
+	}
+
+	return nil
 }

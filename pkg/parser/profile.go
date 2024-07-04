@@ -18,9 +18,9 @@ type Profile struct {
 		PID int    `toml:"pid"`
 	} `toml:"tunnel"`
 	CloudResources struct {
-		ResourceGroupID  string `toml:"resource_group_id"`
-		AppServicePlanID string `toml:"app_service_plan_id"`
-		AppServiceID     string `toml:"app_service_id"`
+		ResourceGroupName  string `toml:"resource_group_name"`
+		AppServicePlanName string `toml:"app_service_plan_name"`
+		AppServiceName     string `toml:"app_service_name"`
 	} `toml:"cloud_resources"`
 }
 

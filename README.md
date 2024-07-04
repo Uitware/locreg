@@ -4,7 +4,7 @@ Serverless container runtimes like AWS ECS, Azure App Service for Containers, GC
 
 ```locreg``` enables **registryless** approach for serverless applications deployment - you need just a single simple configuration file and locreg binary installed. It: 
 
-- 🚀 spins up a **local** container registry
+- 📍 spins up a **local** container registry
 - 🛠️ **builds** the container image and **pushes** to local registry
 - 🌐 spins up a **temporary tunnel** to expose local registry to the Internet (Ngrok is supported for now, Cloudflared coming soon)
 - 🚀 deploys a serverless container runtime resource (Azure App Service supported for now, AWS ECS and GCP Cloud Run coming soon)

@@ -19,7 +19,8 @@ var tunnelCmd = &cobra.Command{
 			return
 		}
 		if config.Tunnel.Provider.Ngrok != (struct{}{}) {
-			fmt.Println("Please specify 'ngrok' in the config file.")
+			fmt.Println("Please specify 'ngrok' in the config file. Or if you want to use another provider, " +
+				"please wait for the next release or contribute by yourself 😺")
 			return
 		}
 		ngrok.StartTunnel(configFilePath)

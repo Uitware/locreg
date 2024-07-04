@@ -59,7 +59,7 @@ func createTunnel(ctx context.Context, registryConfig *parser.Config) error {
 		&registryUrl,
 		config.HTTPEndpoint(),
 		ngrok.WithAuthtokenFromEnv(), // use NGROK_AUTHTOKEN environment variable
-	) //export NGROK_AUTHTOKEN=2im0HmLy1TPLL9Q9Ii58shXwWNC_2gJ24v6M2xb6xLdRppuUw
+	)
 	if err != nil {
 		return fmt.Errorf("failed to start ngrok tunnel: %v", err)
 	}

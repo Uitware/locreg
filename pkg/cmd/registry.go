@@ -20,7 +20,7 @@ var registryCmd = &cobra.Command{
 		if err := local_registry.InitCommand(configFilePath); err != nil {
 			fmt.Println("Error running registry:", err)
 		} else {
-			fmt.Println("Local registry is running.")
+			fmt.Println("Local registry and tunnel are running.")
 		}
 	},
 }

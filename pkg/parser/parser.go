@@ -20,6 +20,11 @@ type Config struct {
 		Name string `yaml:"name" validate:"required"`
 		Tag  string `yaml:"tag" validate:"required"`
 	} `yaml:"image"`
+	Tunnel struct {
+		Provider struct {
+			Ngrok struct{} `yaml:"ngrok" validate:"required"`
+		} `yaml:"provider" validate:"required"`
+	} `yaml:"tunnel" validate:"required"`
 	Deploy struct {
 		Provider struct {
 			Azure struct {

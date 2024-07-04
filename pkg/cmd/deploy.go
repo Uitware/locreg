@@ -23,7 +23,7 @@ var deployCmd = &cobra.Command{
 			aws.Deploy()
 		case "azure":
 			{
-				configFilePath := "config.yaml"
+				configFilePath := "locreg.yaml"
 				config, err := parser.LoadConfig(configFilePath)
 				if err != nil {
 					log.Fatalf("Error loading config: %v", err)

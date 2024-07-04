@@ -3,14 +3,15 @@ package ngrok
 import (
 	"context"
 	"fmt"
-	"golang.ngrok.com/ngrok"
-	"golang.ngrok.com/ngrok/config"
 	"locreg/pkg/parser"
 	"log"
 	"net/url"
 	"os"
 	"sync"
 	"syscall"
+
+	"golang.ngrok.com/ngrok"
+	"golang.ngrok.com/ngrok/config"
 )
 
 func StartTunnel(configFilePath string) {
@@ -22,7 +23,7 @@ func StartTunnel(configFilePath string) {
 		// create child process and then detach from parent process
 		pid, _, _ := syscall.RawSyscall(syscall.SYS_FORK, 0, 0, 0)
 		if pid < 0 {
-			log.Println(fmt.Errorf("failed to fork process: %v", pid))
+			log.Println(fmt.Errorf("❌ failed to fork process: %v", pid))
 			return
 		} else if pid > 0 {
 			// If we got a good PID, then we call exit the parent process.
@@ -33,7 +34,7 @@ func StartTunnel(configFilePath string) {
 		ctx := context.Background()
 		registryConfig, err := parser.LoadConfig(configFilePath)
 		if err != nil {
-			log.Println(fmt.Errorf("failed to load config: %w", err))
+			log.Println(fmt.Errorf("❌ failed to load config: %w", err))
 			return
 		}
 		err = runTunnel(ctx, registryConfig)
@@ -48,7 +49,7 @@ func StartTunnel(configFilePath string) {
 
 func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
 	// Run tunnel
-	log.Println("Creating ngrok tunnel...")
+	log.Println("🌐 Creating ngrok tunnel...")
 	registryUrl := url.URL{
 		Scheme: "http",
 		Host:   fmt.Sprintf("localhost:%d", registryConfig.Registry.Port),
@@ -61,24 +62,24 @@ func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
 		ngrok.WithAuthtokenFromEnv(), // use NGROK_AUTHTOKEN environment variable
 	)
 	if err != nil {
-		return fmt.Errorf("failed to start ngrok tunnel: %v", err)
+		return fmt.Errorf("❌ failed to start ngrok tunnel: %v", err)
 	}
 
 	// Load or create profile
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
-		return fmt.Errorf("failed to get profile path: %w", err)
+		return fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
-		return fmt.Errorf("failed to load or create profile: %w", err)
+		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
 	profile.Tunnel.URL = tunnel.URL()
 	profile.Tunnel.PID = os.Getpid()
 	err = parser.SaveProfile(profile, profilePath)
 	if err != nil {
-		return fmt.Errorf("failed to save profile: %w", err)
+		return fmt.Errorf("❌ failed to save profile: %w", err)
 	}
 
 	select {} // Keep the program running

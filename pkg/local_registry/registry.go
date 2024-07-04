@@ -24,7 +24,7 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 	// Create specifically formatted string for port mapping
 	port, err := nat.NewPort("tcp", containerPort)
 	if err != nil {
-		return fmt.Errorf("failed to create port: %w", err)
+		return fmt.Errorf("❌ failed to run on port: %w", err)
 	}
 	portBindings := nat.PortMap{ // Container port bindings
 		port: []nat.PortBinding{
@@ -37,7 +37,7 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 
 	imagePuller, err := dockerClient.ImagePull(ctx, imageVersion, image.PullOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to pull distribution image: %w", err)
+		return fmt.Errorf("❌ failed to pull distribution image: %w", err)
 	}
 	defer imagePuller.Close()
 	io.Copy(os.Stdout, imagePuller)
@@ -56,23 +56,23 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 		config.Registry.Name,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create distribution container: %w", err)
+		return fmt.Errorf("❌ failed to create distribution container: %w", err)
 	}
 
 	err = updateConfig(dockerClient, ctx, resp.ID, config.Registry.Username, config.Registry.Password)
 	if err != nil {
-		return fmt.Errorf("failed to update config: %w", err)
+		return fmt.Errorf("❌ failed to update config: %w", err)
 	}
 
 	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to start distribution container: %w", err)
+		return fmt.Errorf("❌ failed to start distribution container: %w", err)
 	}
-	fmt.Printf("Container started with ID: %s\n", resp.ID)
+	fmt.Printf("✅ Container started with ID: %s\n", resp.ID)
 
 	err = writeProfile(resp.ID, config.Registry.Username, config.Registry.Password)
 	if err != nil {
-		return fmt.Errorf("failed to write profile: %w", err)
+		return fmt.Errorf("❌ failed to write profile: %w", err)
 	}
 
 	return nil
@@ -82,12 +82,12 @@ func InitCommand(configFilePath string) error {
 	ctx := context.Background()
 	config, err := parser.LoadConfig(configFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("❌ failed to load config: %w", err)
 	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return fmt.Errorf("failed to create Docker client: %w", err)
+		return fmt.Errorf("❌ failed to create Docker client: %w", err)
 	}
 	return runRegistry(cli, ctx, config)
 }
@@ -96,12 +96,12 @@ func RotateCommand(configFilePath string) error {
 	ctx := context.Background()
 	config, err := parser.LoadConfig(configFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("❌ failed to load config: %w", err)
 	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return fmt.Errorf("failed to create Docker client: %w", err)
+		return fmt.Errorf("❌ failed to create Docker client: %w", err)
 	}
 	return RotateCreds(cli, ctx, config.Registry.Username, config.Registry.Password, config.Registry.Name)
 }
@@ -110,12 +110,12 @@ func RotateCommand(configFilePath string) error {
 func writeProfile(containerID, username, password string) error {
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
-		return fmt.Errorf("failed to get profile path: %w", err)
+		return fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
-		return fmt.Errorf("failed to load or create profile: %w", err)
+		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
 	profile.LocalRegistry.RegistryID = containerID
@@ -124,7 +124,7 @@ func writeProfile(containerID, username, password string) error {
 
 	err = parser.SaveProfile(profile, profilePath)
 	if err != nil {
-		return fmt.Errorf("failed to save profile: %w", err)
+		return fmt.Errorf("❌ failed to save profile: %w", err)
 	}
 
 	return nil

@@ -10,6 +10,10 @@ image:
   name: "weather-app"
   tag: "latest"
 
+tunnel:
+  provider:
+    ngrok: # provider name
+      # provider specific configuration if provided
 
 deploy:
   provider:

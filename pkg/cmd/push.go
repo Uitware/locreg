@@ -13,7 +13,7 @@ var pushCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		dir := args[0]
-		configFilePath := "config.yaml"
+		configFilePath := "locreg.yaml"
 		err := local_registry.BuildCommand(configFilePath, dir)
 		if err != nil {
 			fmt.Println("Error building and pushing image:", err)

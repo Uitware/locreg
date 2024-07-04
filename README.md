@@ -12,11 +12,11 @@ Serverless container runtimes like AWS ECS, Azure App Service for Containers, GC
 
  **Your application is up and running on a cloud serverless platform! 🎉** Now you can easily **rebuild** and **redeploy** your application using ```locreg```, and **when the testing is done - easily destroy both local and cloud resources via ```locreg```**!
 
-All configuration is defined and controlled via single ```config.yaml``` file - please see ```config_example.yaml``` in the repo root. 
+All configuration is defined and controlled via single ```locreg.yaml``` file - please see ```config_example.yaml``` in the repo root. 
 
 #### 📄 ```locreg``` concepts
 
-locreg uses ```config.yaml``` as a source of truth for development environment that it creates. Configuration should include a single registry backend, a single application backend and a single tunnel backend.
+locreg uses ```locreg.yaml``` as a source of truth for development environment that it creates. Configuration should include a single registry backend, a single application backend and a single tunnel backend.
 
 🗃️ Registry backend (reference ```distribution``` registry is used by default: https://distribution.github.io/distribution/)
 

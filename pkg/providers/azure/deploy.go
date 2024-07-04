@@ -27,13 +27,13 @@ var (
 )
 
 func Deploy(azureConfig *parser.Config) {
-	log.Println("Starting deployment...")
+	log.Println("☁️ Starting deployment...")
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(subscriptionID) == 0 {
-		log.Fatal("AZURE_SUBSCRIPTION_ID is not set.")
+		log.Fatal("❌ AZURE_SUBSCRIPTION_ID is not set.")
 	}
 
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
@@ -59,28 +59,28 @@ func Deploy(azureConfig *parser.Config) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Resource group created:", *resourceGroup.ID)
+	log.Println("✅ Resource group created:", *resourceGroup.ID)
 
 	appServicePlan, err := createAppServicePlan(ctx, azureConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("App service plan created:", *appServicePlan.ID)
+	log.Println("✅ App service plan created:", *appServicePlan.ID)
 
 	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("App service created:", *appService.ID)
+	log.Println("✅ App service created:", *appService.ID)
 
 	err = writeProfile(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)
 	if err != nil {
-		log.Fatalf("Failed to write profile: %v", err)
+		log.Fatalf("❌ Failed to write profile: %v", err)
 	}
 }
 
 func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armresources.ResourceGroup, error) {
-	log.Println("Creating Resource Group...")
+	log.Println("☁️ Creating Resource Group...")
 	resourceGroupResp, err := resourceGroupClient.CreateOrUpdate(
 		ctx,
 		azureConfig.Deploy.Provider.Azure.ResourceGroup,

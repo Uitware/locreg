@@ -7,14 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"locreg/pkg/parser"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
-	"io"
-	"locreg/pkg/parser"
-	"time"
 )
 
 type ErrorLine struct {
@@ -29,12 +30,12 @@ type ErrorDetail struct {
 func BuildCommand(configFilePath string, dir string) error {
 	config, err := parser.LoadConfig(configFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("❌ failed to load config: %w", err)
 	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return fmt.Errorf("failed to create Docker client: %w", err)
+		return fmt.Errorf("❌ failed to create Docker client: %w", err)
 	}
 
 	return imageBuildAndPush(cli, dir, config)
@@ -53,7 +54,7 @@ func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.C
 
 	tar, err := archive.TarWithOptions(dir, &archive.TarOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create tar archive: %w", err)
+		return fmt.Errorf("❌ failed to create tar archive: %w", err)
 	}
 
 	buildOpts := types.ImageBuildOptions{
@@ -63,17 +64,17 @@ func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.C
 	}
 	buildResponse, err := dockerClient.ImageBuild(ctx, tar, buildOpts)
 	if err != nil {
-		return fmt.Errorf("failed to build image: %w", err)
+		return fmt.Errorf("❌ failed to build image: %w", err)
 	}
 	defer buildResponse.Body.Close()
 
 	if err := printLog(buildResponse.Body); err != nil {
-		return fmt.Errorf("error during image build: %w", err)
+		return fmt.Errorf("❌ error during image build: %w", err)
 	}
 
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		return fmt.Errorf("failed to encode auth config: %w", err)
+		return fmt.Errorf("❌ failed to encode auth config: %w", err)
 	}
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
@@ -81,12 +82,12 @@ func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.C
 		RegistryAuth: authStr,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to push image: %w", err)
+		return fmt.Errorf("❌ failed to push image: %w", err)
 	}
 	defer pushResponse.Close()
 
 	if err := printLog(pushResponse); err != nil {
-		return fmt.Errorf("error during image push: %w", err)
+		return fmt.Errorf("❌ error during image push: %w", err)
 	}
 
 	return nil

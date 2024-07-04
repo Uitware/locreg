@@ -36,7 +36,7 @@ func StartTunnel(configFilePath string) error {
 			log.Println(fmt.Errorf("failed to load config: %w", err))
 			return
 		}
-		err = createTunnel(ctx, registryConfig)
+		err = runTunnel(ctx, registryConfig)
 		if err != nil {
 			log.Println(err)
 			return
@@ -46,7 +46,7 @@ func StartTunnel(configFilePath string) error {
 	return nil
 }
 
-func createTunnel(ctx context.Context, registryConfig *parser.Config) error {
+func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
 	// Run tunnel
 	log.Println("Creating ngrok tunnel...")
 	registryUrl := url.URL{

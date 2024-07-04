@@ -13,14 +13,13 @@ var registryCmd = &cobra.Command{
 	Long:  `This command runs a local Docker registry using Docker.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		configFilePath := "config.yaml"
-		err := ngrok.StartTunnel(configFilePath)
-		if err != nil {
+		if err := ngrok.StartTunnel(configFilePath); err != nil {
 			fmt.Println("Error running tunnel:", err)
 		} else {
 			fmt.Println("tunnel is running.")
 		}
-		err = local_registry.InitCommand(configFilePath)
-		if err != nil {
+
+		if err := local_registry.InitCommand(configFilePath); err != nil {
 			fmt.Println("Error running registry:", err)
 		} else {
 			fmt.Println("Local registry is running.")

@@ -15,14 +15,12 @@ var registryCmd = &cobra.Command{
 		configFilePath := "config.yaml"
 		if err := ngrok.StartTunnel(configFilePath); err != nil {
 			fmt.Println("Error running tunnel:", err)
-		} else {
-			fmt.Println("tunnel is running.")
 		}
 
 		if err := local_registry.InitCommand(configFilePath); err != nil {
 			fmt.Println("Error running registry:", err)
 		} else {
-			fmt.Println("Local registry is running.")
+			fmt.Println("Local registry and tunnel are running.")
 		}
 	},
 }

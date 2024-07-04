@@ -5,22 +5,23 @@ import (
 	"log"
 	"os"
 
-	"github.com/spf13/cobra"
 	"locreg/pkg/local_registry"
 	"locreg/pkg/providers/azure"
 	"locreg/pkg/tunnels/ngrok"
+
+	"github.com/spf13/cobra"
 )
 
 var destroyCmd = &cobra.Command{
 	Use:   "destroy all",
-	Short: "Destroy all resources described in the config file",
-	Long:  `Destroy all resources described in the config file`,
+	Short: "🗑 destroy all resources, defined in the locreg config file",
+	Long:  `🗑 destroy all resources, defined in the locreg.yaml config file: local registry, tunnel backend, applicatation backend`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := destroyAllResources()
 		if err != nil {
-			log.Fatalf("Error destroying resources: %v", err)
+			log.Fatalf("❌ Error destroying resources: %v", err)
 		}
-		fmt.Println("All resources destroyed successfully")
+		fmt.Println("✅ All resources destroyed successfully")
 	},
 }
 
@@ -34,12 +35,12 @@ func destroyAllResources() error {
 	err := os.Remove(profilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("There are no resources created yet.")
+			fmt.Println("❌ There are no resources created yet.")
 		} else {
-			return fmt.Errorf("failed to remove profile: %w", err)
+			return fmt.Errorf("❌ failed to remove profile: %w", err)
 		}
 	} else {
-		fmt.Println("Profile removed successfully")
+		fmt.Println("✅ Profile removed successfully")
 	}
 
 	return nil

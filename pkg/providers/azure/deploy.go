@@ -42,6 +42,26 @@ func Deploy(azureConfig *parser.Config) {
 	}
 	ctx := context.Background()
 
+	// Load profile to get tunnel URL
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		log.Fatalf("❌ Failed to get profile path: %v", err)
+	}
+
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		log.Fatalf("❌ Failed to load or create profile: %v", err)
+	}
+
+	// Remove 'https://' prefix from the tunnel URL
+	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
+
+	// Check the validity of the tunnel URL with exponential backoff
+	err = checkTunnelURLValidity(tunnelURL)
+	if err != nil {
+		log.Fatalf("❌ Failed to validate tunnel URL: %v", err)
+	}
+
 	resourcesClientFactory, err = armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -67,7 +87,7 @@ func Deploy(azureConfig *parser.Config) {
 	}
 	log.Println("✅ App service plan created:", *appServicePlan.ID)
 
-	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID)
+	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID, tunnelURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,10 +144,11 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 	return &resp.Plan, nil
 }
 
-func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID string) (*armappservice.Site, error) {
+func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID, tunnelURL string) (*armappservice.Site, error) {
 	log.Println("☁️ Creating Web App...")
 
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
+	imageConfig := azureConfig.Image
 
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
@@ -137,20 +158,6 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
 		return nil, fmt.Errorf("❌ failed to load or create profile: %w", err)
-	}
-
-	// Remove 'https://' prefix from the tunnel URL
-	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
-
-	// Check if tunnel URL is not empty
-	if tunnelURL == "" {
-		return nil, fmt.Errorf("tunnel URL is empty")
-	}
-
-	// Check the validity of the tunnel URL with exponential backoff
-	err = checkTunnelURLValidity(tunnelURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to validate tunnel URL: %w", err)
 	}
 
 	appSettings := []*armappservice.NameValuePair{
@@ -178,7 +185,7 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 				ServerFarmID: to.Ptr(appServicePlanID),
 				SiteConfig: &armappservice.SiteConfig{
 					AlwaysOn:       to.Ptr(siteConfig.AlwaysOn),
-					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s/%s:%s", tunnelURL, siteConfig.DockerImage, siteConfig.Tag)),
+					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s/%s:%s", tunnelURL, imageConfig.Name, imageConfig.Tag)),
 					AppSettings:    appSettings,
 				},
 				HTTPSOnly: to.Ptr(true),
@@ -235,19 +242,27 @@ func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) 
 }
 
 func checkTunnelURLValidity(tunnelURL string) error {
-	checkURL := fmt.Sprintf("https://%s", tunnelURL)
-
 	operation := func() error {
+		// Check if tunnel URL is empty
+		if tunnelURL == "" {
+			log.Println("❌ Tunnel URL is empty, retrying...")
+			return fmt.Errorf("tunnel URL is empty")
+		}
+
+		checkURL := fmt.Sprintf("https://%s", tunnelURL)
 		resp, err := http.Get(checkURL)
 		if err != nil {
+			log.Printf("❌ Error checking tunnel URL %s: %v", checkURL, err)
 			return err
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
+			log.Printf("❌ Invalid response status for URL %s: %s", checkURL, resp.Status)
 			return fmt.Errorf("invalid response status: %s", resp.Status)
 		}
 
+		log.Printf("✅ Tunnel URL %s is valid", checkURL)
 		return nil
 	}
 
@@ -256,7 +271,7 @@ func checkTunnelURLValidity(tunnelURL string) error {
 
 	err := backoff.Retry(operation, backOff)
 	if err != nil {
-		return fmt.Errorf("tunnel URL check failed after retries: %w", err)
+		return fmt.Errorf("❌ Tunnel URL check failed after retries: %w", err)
 	}
 
 	return nil

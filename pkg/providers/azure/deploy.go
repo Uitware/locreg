@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/cenkalti/backoff/v4"
 	"locreg/pkg/parser"
 )
 
@@ -137,13 +140,23 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 	}
 
 	// Remove 'https://' prefix from the tunnel URL
-
 	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
-	dockerRegistryURL := profile.Tunnel.URL
+
+	// Check if tunnel URL is not empty
+	if tunnelURL == "" {
+		return nil, fmt.Errorf("tunnel URL is empty")
+	}
+
+	// Check the validity of the tunnel URL with exponential backoff
+	err = checkTunnelURLValidity(tunnelURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate tunnel URL: %w", err)
+	}
+
 	appSettings := []*armappservice.NameValuePair{
 		{
 			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_URL"),
-			Value: to.Ptr(dockerRegistryURL), // Use the tunnel URL from profile without 'https://'
+			Value: to.Ptr(fmt.Sprintf("https://%s", tunnelURL)),
 		},
 		{
 			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
@@ -216,6 +229,34 @@ func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) 
 	err = parser.SaveProfile(profile, profilePath)
 	if err != nil {
 		return fmt.Errorf("failed to save profile: %w", err)
+	}
+
+	return nil
+}
+
+func checkTunnelURLValidity(tunnelURL string) error {
+	checkURL := fmt.Sprintf("https://%s", tunnelURL)
+
+	operation := func() error {
+		resp, err := http.Get(checkURL)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("invalid response status: %s", resp.Status)
+		}
+
+		return nil
+	}
+
+	backOff := backoff.NewExponentialBackOff()
+	backOff.MaxElapsedTime = 2 * time.Minute // Max time to wait
+
+	err := backoff.Retry(operation, backOff)
+	if err != nil {
+		return fmt.Errorf("tunnel URL check failed after retries: %w", err)
 	}
 
 	return nil

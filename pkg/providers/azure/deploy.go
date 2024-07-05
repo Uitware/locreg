@@ -5,16 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-	"github.com/cenkalti/backoff/v4"
 	"locreg/pkg/parser"
 )
 
@@ -95,7 +92,7 @@ func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armr
 }
 
 func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*armappservice.Plan, error) {
-	log.Println("Creating App Service Plan...")
+	log.Println("☁️ Creating App Service Plan...")
 	sku := azureConfig.Deploy.Provider.Azure.AppServicePlan.Sku
 	pollerResp, err := plansClient.BeginCreateOrUpdate(
 		ctx,
@@ -125,18 +122,18 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 }
 
 func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID string) (*armappservice.Site, error) {
-	log.Println("Creating Web App...")
+	log.Println("☁️ Creating Web App...")
 
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
 
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get profile path: %w", err)
+		return nil, fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load or create profile: %w", err)
+		return nil, fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
 	// Remove 'https://' prefix from the tunnel URL
@@ -214,12 +211,12 @@ func getSubscriptionID() (string, error) {
 func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) error {
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
-		return fmt.Errorf("failed to get profile path: %w", err)
+		return fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
-		return fmt.Errorf("failed to load or create profile: %w", err)
+		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
 	profile.CloudResources.ResourceGroupName = resourceGroupName
@@ -228,7 +225,7 @@ func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) 
 
 	err = parser.SaveProfile(profile, profilePath)
 	if err != nil {
-		return fmt.Errorf("failed to save profile: %w", err)
+		return fmt.Errorf("❌ failed to save profile: %w", err)
 	}
 
 	return nil

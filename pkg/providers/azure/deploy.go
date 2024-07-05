@@ -258,7 +258,7 @@ func checkTunnelURLValidity(tunnelURL string) error {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("❌ Invalid response status for URL %s: %s", checkURL, resp.Status)
+			log.Printf("❌ Invalid response status: %s, retrying...", resp.Status)
 			return fmt.Errorf("invalid response status: %s", resp.Status)
 		}
 
@@ -266,7 +266,10 @@ func checkTunnelURLValidity(tunnelURL string) error {
 		return nil
 	}
 
+	// Create an exponential backoff with custom intervals
 	backOff := backoff.NewExponentialBackOff()
+	backOff.InitialInterval = 3 * time.Second
+	backOff.Multiplier = 2
 	backOff.MaxElapsedTime = 2 * time.Minute // Max time to wait
 
 	err := backoff.Retry(operation, backOff)

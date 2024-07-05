@@ -11,8 +11,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "locreg",
-	Short: "locreg is a CLI tool for managing deployments and tunnels",
-	Long:  `locreg is a CLI tool for managing deployments and tunnels for various cloud providers.`,
+	Short: "🚀☁️ locreg enables **registryless** approach for serverless applications deployment",
+	Long:  `🚀☁️ locreg is a CLI tool for managing deployments for various cloud providers, using a local container registry and a tunnel.`,
 }
 
 func Execute() {

@@ -2,21 +2,22 @@ package azure
 
 import (
 	"context"
+	"locreg/pkg/parser"
+	"log"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-	"locreg/pkg/parser"
-	"log"
 )
 
 func Destroy() {
-	log.Println("Starting destruction...")
+	log.Println("🗑 Starting destruction...")
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(subscriptionID) == 0 {
-		log.Fatal("AZURE_SUBSCRIPTION_ID is not set.")
+		log.Fatal("❌ AZURE_SUBSCRIPTION_ID is not set.")
 	}
 
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
@@ -50,7 +51,7 @@ func Destroy() {
 
 	if profile.CloudResources.AppServiceName != "" {
 		if err := deleteWebApp(ctx, profile.CloudResources.AppServiceName, profile.CloudResources.ResourceGroupName); err != nil {
-			log.Printf("Error deleting app service: %v", err)
+			log.Printf("❌ Error deleting app service: %v", err)
 		} else {
 			log.Println("App service deleted:", profile.CloudResources.AppServiceName)
 		}
@@ -58,23 +59,23 @@ func Destroy() {
 
 	if profile.CloudResources.AppServicePlanName != "" {
 		if err := deleteAppServicePlan(ctx, profile.CloudResources.AppServicePlanName, profile.CloudResources.ResourceGroupName); err != nil {
-			log.Printf("Error deleting app service plan: %v", err)
+			log.Printf("❌ Error deleting app service plan: %v", err)
 		} else {
-			log.Println("App service plan deleted:", profile.CloudResources.AppServicePlanName)
+			log.Println("✅ App service plan deleted:", profile.CloudResources.AppServicePlanName)
 		}
 	}
 
 	if profile.CloudResources.ResourceGroupName != "" {
 		if err := deleteResourceGroup(ctx, profile.CloudResources.ResourceGroupName); err != nil {
-			log.Printf("Error deleting resource group: %v", err)
+			log.Printf("❌ Error deleting resource group: %v", err)
 		} else {
-			log.Println("Resource group deleted:", profile.CloudResources.ResourceGroupName)
+			log.Println("✅ Resource group deleted:", profile.CloudResources.ResourceGroupName)
 		}
 	}
 }
 
 func deleteResourceGroup(ctx context.Context, resourceGroupName string) error {
-	log.Println("Deleting Resource Group...")
+	log.Println("🗑 Deleting Resource Group...")
 	pollerResp, err := resourceGroupClient.BeginDelete(ctx, resourceGroupName, nil)
 	if err != nil {
 		return err
@@ -87,7 +88,7 @@ func deleteResourceGroup(ctx context.Context, resourceGroupName string) error {
 }
 
 func deleteAppServicePlan(ctx context.Context, appServicePlanName, resourceGroupName string) error {
-	log.Println("Deleting App Service Plan...")
+	log.Println("🗑 Deleting App Service Plan...")
 	_, err := plansClient.Delete(ctx, resourceGroupName, appServicePlanName, nil)
 	if err != nil {
 		return err
@@ -96,7 +97,7 @@ func deleteAppServicePlan(ctx context.Context, appServicePlanName, resourceGroup
 }
 
 func deleteWebApp(ctx context.Context, appServiceName, resourceGroupName string) error {
-	log.Println("Deleting Web App...")
+	log.Println("🗑 Deleting Web App...")
 	_, err := webAppsClient.Delete(ctx, resourceGroupName, appServiceName, nil)
 	if err != nil {
 		return err

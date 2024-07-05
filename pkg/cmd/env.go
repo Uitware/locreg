@@ -2,21 +2,22 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 // TODO - refactor description
 
 var envCmd = &cobra.Command{
 	Use:   "env",
-	Short: "Manage environment values used by locreg tool",
-	Long:  `Manage environment values used by locreg tool, such as viewing and editing the current environment configuration.`,
+	Short: "🔑 manage environment values used by locreg",
+	Long:  `🔑 view and edit environment values used by locreg.`,
 }
 
 var envEditCmd = &cobra.Command{
 	Use:   "edit",
-	Short: "Edit current environment values used by locreg tool",
+	Short: "🔑 edit current environment values used by locreg tool",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Placeholder for actual editing logic
 		fmt.Println("Editing current environment values...")
@@ -25,11 +26,11 @@ var envEditCmd = &cobra.Command{
 
 var envShowCmd = &cobra.Command{
 	Use:   "show",
-	Short: "Show current environment values used by locreg tool",
+	Short: "🔑 show current environment values used by locreg tool",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Placeholder for actual showing logic
 		envVars := os.Environ()
-		fmt.Println("Current environment values:")
+		fmt.Println("🔑 Current environment values:")
 		for _, env := range envVars {
 			fmt.Println(env)
 		}

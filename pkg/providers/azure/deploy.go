@@ -8,11 +8,12 @@ import (
 	"os/exec"
 	"strings"
 
+	"locreg/pkg/parser"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-	"locreg/pkg/parser"
 )
 
 var (
@@ -24,13 +25,13 @@ var (
 )
 
 func Deploy(azureConfig *parser.Config) {
-	log.Println("Starting deployment...")
+	log.Println("☁️ Starting deployment...")
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(subscriptionID) == 0 {
-		log.Fatal("AZURE_SUBSCRIPTION_ID is not set.")
+		log.Fatal("❌ AZURE_SUBSCRIPTION_ID is not set.")
 	}
 
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
@@ -56,28 +57,28 @@ func Deploy(azureConfig *parser.Config) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Resource group created:", *resourceGroup.ID)
+	log.Println("✅ Resource group created:", *resourceGroup.ID)
 
 	appServicePlan, err := createAppServicePlan(ctx, azureConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("App service plan created:", *appServicePlan.ID)
+	log.Println("✅ App service plan created:", *appServicePlan.ID)
 
 	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("App service created:", *appService.ID)
+	log.Println("✅ App service created:", *appService.ID)
 
 	err = writeProfile(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)
 	if err != nil {
-		log.Fatalf("Failed to write profile: %v", err)
+		log.Fatalf("❌ Failed to write profile: %v", err)
 	}
 }
 
 func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armresources.ResourceGroup, error) {
-	log.Println("Creating Resource Group...")
+	log.Println("☁️ Creating Resource Group...")
 	resourceGroupResp, err := resourceGroupClient.CreateOrUpdate(
 		ctx,
 		azureConfig.Deploy.Provider.Azure.ResourceGroup,
@@ -92,7 +93,7 @@ func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armr
 }
 
 func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*armappservice.Plan, error) {
-	log.Println("Creating App Service Plan...")
+	log.Println("☁️ Creating App Service Plan...")
 	sku := azureConfig.Deploy.Provider.Azure.AppServicePlan.Sku
 	pollerResp, err := plansClient.BeginCreateOrUpdate(
 		ctx,
@@ -122,18 +123,18 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 }
 
 func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID string) (*armappservice.Site, error) {
-	log.Println("Creating Web App...")
+	log.Println("☁️ Creating Web App...")
 
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
 
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get profile path: %w", err)
+		return nil, fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load or create profile: %w", err)
+		return nil, fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
 	// Remove 'https://' prefix from the tunnel URL
@@ -201,12 +202,12 @@ func getSubscriptionID() (string, error) {
 func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) error {
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
-		return fmt.Errorf("failed to get profile path: %w", err)
+		return fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
-		return fmt.Errorf("failed to load or create profile: %w", err)
+		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
 	profile.CloudResources.ResourceGroupName = resourceGroupName
@@ -215,7 +216,7 @@ func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) 
 
 	err = parser.SaveProfile(profile, profilePath)
 	if err != nil {
-		return fmt.Errorf("failed to save profile: %w", err)
+		return fmt.Errorf("❌ failed to save profile: %w", err)
 	}
 
 	return nil

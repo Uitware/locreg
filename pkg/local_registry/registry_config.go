@@ -5,11 +5,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"golang.org/x/crypto/bcrypt"
-	"io"
 )
 
 func updateConfig(
@@ -21,7 +22,7 @@ func updateConfig(
 	// Password configuration for registry should be hashed using bcrypt
 	credsTarBuffer, err := prepareCreds(username, password)
 	if err != nil {
-		return fmt.Errorf("failed to prepare credentials: %w", err)
+		return fmt.Errorf("❌ failed to prepare credentials: %w", err)
 	}
 	// Write password file to container
 	err = dockerClient.CopyToContainer(
@@ -32,7 +33,7 @@ func updateConfig(
 		container.CopyToContainerOptions{},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to copy to container: %w", err)
+		return fmt.Errorf("❌ failed to copy to container: %w", err)
 	}
 	// Docker config variables
 	configUpdates := `
@@ -49,7 +50,7 @@ auth:
 		"/etc/docker/registry/config.yml",
 	)
 	if err != nil {
-		return fmt.Errorf("copy from container: %w", err)
+		return fmt.Errorf("❌ copy from container: %w", err)
 	}
 	defer reader.Close()
 
@@ -62,12 +63,12 @@ auth:
 			break // End of archive
 		}
 		if err != nil {
-			return fmt.Errorf("error reading tar file: %v", err)
+			return fmt.Errorf("❌ error reading tar file: %v", err)
 		}
 		if header.Name == "config.yml" {
 			yamlBytes, err = io.ReadAll(tarReader)
 			if err != nil {
-				return fmt.Errorf("error reading config.yml: %v", err)
+				return fmt.Errorf("❌ error reading config.yml: %v", err)
 			}
 			break
 		}
@@ -84,7 +85,7 @@ auth:
 		container.CopyToContainerOptions{},
 	)
 	if err != nil {
-		return fmt.Errorf("copy to container: %w", err)
+		return fmt.Errorf("❌ copy to container: %w", err)
 	}
 
 	return nil

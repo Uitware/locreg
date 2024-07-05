@@ -2,9 +2,10 @@ package parser
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"os"
 	"reflect"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
@@ -59,12 +60,12 @@ func LoadConfig(filePath string) (*Config, error) {
 	var config Config
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("error reading config file: %v", err)
+		return nil, fmt.Errorf("❌ error reading config file: %v", err)
 	}
 
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling config file: %v", err)
+		return nil, fmt.Errorf("❌ error unmarshaling config file: %v", err)
 	}
 
 	err = validateConfig(config)
@@ -91,7 +92,7 @@ func validateStruct(v reflect.Value) error {
 			}
 		} else if tag := fieldType.Tag.Get("validate"); tag == "required" {
 			if isEmptyValue(field) {
-				return fmt.Errorf("missing required field: %s", fieldType.Name)
+				return fmt.Errorf("❌ missing required field: %s", fieldType.Name)
 			}
 		}
 	}

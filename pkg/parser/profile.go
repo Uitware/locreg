@@ -2,9 +2,10 @@ package parser
 
 import (
 	"fmt"
-	"github.com/pelletier/go-toml"
 	"os"
 	"path/filepath"
+
+	"github.com/pelletier/go-toml"
 )
 
 type Profile struct {
@@ -27,7 +28,7 @@ type Profile struct {
 func GetProfilePath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("failed to get home directory: %w", err)
+		return "", fmt.Errorf("❌ failed to get home directory: %w", err)
 	}
 	profilePath := filepath.Join(homeDir, ".locreg")
 	return profilePath, nil
@@ -38,11 +39,11 @@ func LoadOrCreateProfile(profilePath string) (*Profile, error) {
 	if _, err := os.Stat(profilePath); err == nil {
 		data, err := os.ReadFile(profilePath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read profile file: %w", err)
+			return nil, fmt.Errorf("❌ failed to read profile file: %w", err)
 		}
 		err = toml.Unmarshal(data, &profile)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal profile file: %w", err)
+			return nil, fmt.Errorf("❌ failed to unmarshal profile file: %w", err)
 		}
 	} else {
 		profile = Profile{}

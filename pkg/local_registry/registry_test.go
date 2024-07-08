@@ -2,15 +2,18 @@ package local_registry
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	"locreg/pkg/parser"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 )
 
 func getProjectRoot() string {
@@ -39,15 +42,22 @@ func setUpRegistry(t *testing.T) {
 
 	t.Cleanup(
 		func() {
-			t.Cleanup(func() {
-				err := exec.Command("go", "run", "../../main.go", "destroy").Run()
-				if err != nil {
-					t.Errorf(
-						"Failed to run destroy command: %v. If runned in CI no action needed else delete resources manualy",
-						err,
-					)
-				}
-			})
+			runningTestContainer, err := dockerClient.ContainerList(
+				context.Background(),
+				container.ListOptions{
+					Filters: filters.NewArgs(
+						filters.Arg("name", config.Registry.Name),
+					),
+				})
+			if err != nil {
+				t.Fatalf("❌ failed to list containers: %v", err)
+			}
+			err = StopAndRemoveContainer(runningTestContainer[0].ID)
+			if err != nil {
+				t.Fatalf(
+					"❌ failed to stop and remove container. If in CI you may ignore it else delete it manualy: %v",
+					err)
+			}
 		})
 }
 
@@ -81,6 +91,34 @@ func isContainerRunning(t *testing.T, containerID string) bool {
 	return containers[0].State == "running"
 }
 
+func isLocalRegistryAccessible(t *testing.T) bool {
+	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "registry", "locreg.yaml"))
+	if err != nil {
+		t.Errorf("❌ failed to load config: %v", err)
+	}
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		t.Fatalf("❌ failed to create Docker client: %v", err)
+	}
+	for delay := 1; delay <= 5; delay++ {
+		authResp, err := dockerClient.RegistryLogin(
+			context.Background(),
+			registry.AuthConfig{
+				Username:      config.Registry.Username,
+				Password:      config.Registry.Password,
+				ServerAddress: fmt.Sprintf("localhost:%s", strconv.Itoa(config.Registry.Port)),
+			})
+		if err != nil {
+			t.Logf("❌ failed to login to registry: %v", err)
+		}
+		if authResp.Status == "Login Succeeded" {
+			return true
+		}
+		time.Sleep(time.Duration(delay*2) * time.Second) // Wait for the specified delay before the next attempt
+	}
+	return false
+}
+
 func TestRunContainer(t *testing.T) {
 	setUpRegistry(t)
 	profilePath, err := parser.GetProfilePath()
@@ -101,7 +139,7 @@ func TestRunContainer(t *testing.T) {
 			t.Log("✅ container is running")
 		}
 	} else {
-		t.Error("❌ container does not exist")
+		t.Fatal("❌ container does not exist")
 	}
 
 	// Test case 2: Does container creds exist in profile
@@ -113,6 +151,13 @@ func TestRunContainer(t *testing.T) {
 	}
 	if profile.LocalRegistry.Password == "" {
 		t.Error("❌ failed to get username")
+	}
+
+	// Test case 3: Does container accessible locally
+	if !isLocalRegistryAccessible(t) {
+		t.Fatalf("❌ failed to access local registry")
+	} else {
+		t.Log("✅ local registry is accessible")
 	}
 
 }

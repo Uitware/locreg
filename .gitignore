@@ -1,6 +1,7 @@
 .idea/
 locreg
-locreg.yaml
+/locreg.yaml
+!**/locreg.yaml
 Dockerfile
 
 # Created by https://www.toptal.com/developers/gitignore/api/goland,go,visualstudiocode
@@ -162,3 +163,4 @@ fabric.properties
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/goland,go,visualstudiocode
+/locreg.yaml

@@ -22,6 +22,29 @@ func getProjectRoot() string {
 	return dir
 }
 
+func getProfile(t *testing.T) *parser.Profile {
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		t.Errorf("❌ failed to get profile path: %v", err)
+	}
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		t.Errorf("❌ failed to load or create profile: %v", err)
+	}
+	// Workaround for some time. Profile parser need patch
+	if profile.Tunnel.URL != "" {
+		waitForTunnel(profile.Tunnel.URL, t, 10*time.Second)
+	} else {
+		for profile.Tunnel.URL == "" {
+			profile, err = parser.LoadOrCreateProfile(profilePath)
+			if err != nil {
+				t.Fatalf("❌ failed to load or create profile: %v", err)
+			}
+		}
+	}
+	return profile
+}
+
 func createTunnel(t *testing.T) {
 	err := exec.Command("go", "run", "../../../main.go", "tunnel").Run()
 	if err != nil {
@@ -29,11 +52,16 @@ func createTunnel(t *testing.T) {
 	}
 	openDummyPort(t)
 	t.Cleanup(func() {
-		err := exec.Command("go", "run", "../../../main.go", "destroy").Run()
+		process, err := os.FindProcess(getProfile(t).Tunnel.PID)
 		if err != nil {
-			t.Errorf(
-				"Failed to run destroy command: %v. If runned in CI no action needed else delete resources manualy",
-				err)
+			t.Fatalf("Error finding process: %v\n of tunnel. You nay ignore this in CI", err)
+			return
+		}
+
+		err = process.Kill()
+		if err != nil {
+			fmt.Printf("Error killing process: %v\n. You nay ignore this in CI", err)
+			return
 		}
 	})
 }
@@ -96,25 +124,7 @@ func TestTunnelCmd(t *testing.T) {
 
 	// Create tunnel for testing
 	createTunnel(t)
-	profilePath, err := parser.GetProfilePath()
-	if err != nil {
-		t.Errorf("❌ failed to get profile path: %v", err)
-	}
-	profile, err := parser.LoadOrCreateProfile(profilePath)
-	if err != nil {
-		t.Errorf("❌ failed to load or create profile: %v", err)
-	}
-	// Workaround for some time. Profile parser need patch
-	if profile.Tunnel.URL != "" {
-		waitForTunnel(profile.Tunnel.URL, t, 10*time.Second)
-	} else {
-		for profile.Tunnel.URL == "" {
-			profile, err = parser.LoadOrCreateProfile(profilePath)
-			if err != nil {
-				t.Fatalf("❌ failed to load or create profile: %v", err)
-			}
-		}
-	}
+	profile := getProfile(t)
 
 	if profile.Tunnel.PID == 0 {
 		t.Fatal("❌ no tunnel PID found in profile. It was not created properly")
@@ -133,5 +143,4 @@ func TestTunnelCmd(t *testing.T) {
 	} else {
 		t.Log("✅ tunnel successfully running")
 	}
-
 }

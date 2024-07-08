@@ -109,7 +109,7 @@ func isLocalRegistryAccessible(t *testing.T) bool {
 				ServerAddress: fmt.Sprintf("localhost:%s", strconv.Itoa(config.Registry.Port)),
 			})
 		if err != nil {
-			t.Logf("❌ failed to login to registry: %v", err)
+			t.Logf("Debug Logs: %v", err)
 		}
 		if authResp.Status == "Login Succeeded" {
 			return true

@@ -240,7 +240,6 @@ func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) 
 
 	return nil
 }
-
 func checkTunnelURLValidity(tunnelURL string) error {
 	operation := func() error {
 		// Check if tunnel URL is empty
@@ -258,7 +257,7 @@ func checkTunnelURLValidity(tunnelURL string) error {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("❌ Invalid response status: %s, retrying...", resp.Status)
+			log.Printf("❌ Invalid response status for URL %s: %s, retrying...", checkURL, resp.Status)
 			return fmt.Errorf("invalid response status: %s", resp.Status)
 		}
 
@@ -266,13 +265,18 @@ func checkTunnelURLValidity(tunnelURL string) error {
 		return nil
 	}
 
-	// Create an exponential backoff with custom intervals
-	backOff := backoff.NewExponentialBackOff()
-	backOff.InitialInterval = 3 * time.Second
-	backOff.Multiplier = 2
-	backOff.MaxElapsedTime = 2 * time.Minute // Max time to wait
+	intervals := []time.Duration{1 * time.Second, 3 * time.Second, 7 * time.Second, 15 * time.Second, 31 * time.Second}
+	maxRetries := len(intervals)
+	currentRetry := 0
 
-	err := backoff.Retry(operation, backOff)
+	err := backoff.RetryNotify(operation, backoff.WithMaxRetries(backoff.NewConstantBackOff(1*time.Second), uint64(maxRetries)), func(err error, duration time.Duration) {
+		if currentRetry < maxRetries {
+			duration = intervals[currentRetry]
+			currentRetry++
+		}
+		log.Printf("⏳ Retrying in %s due to error: %v", duration, err)
+		time.Sleep(duration)
+	})
 	if err != nil {
 		return fmt.Errorf("❌ Tunnel URL check failed after retries: %w", err)
 	}

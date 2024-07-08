@@ -19,6 +19,8 @@ jobs:
         go-version: '1.22.4'
 
     - name: Test
+      env:
+        NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN_FOR_CI_TESTS }}
       run: go test -v ./...
 
   build:

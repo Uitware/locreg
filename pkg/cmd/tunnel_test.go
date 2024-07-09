@@ -35,21 +35,15 @@ func getProfile(t *testing.T) *parser.Profile {
 	if profile.Tunnel.URL != "" {
 		waitForTunnel(profile.Tunnel.URL, t, 10*time.Second)
 	} else {
-		timeout := time.After(5 * time.Second)
-		for {
-			select {
-			case <-timeout:
-				t.Fatalf("❌ timeout while waiting for profile.Tunnel.URL to be non-empty")
-			default:
-				profile, err = parser.LoadOrCreateProfile(profilePath)
-				if err != nil {
-					t.Fatalf("❌ failed to load or create profile: %v", err)
-				}
-				if profile.Tunnel.URL != "" {
-					break
-				}
-				time.Sleep(100 * time.Millisecond) // Sleep for a while before trying again
+		for i := 0; i < 5; i++ {
+			profile, err = parser.LoadOrCreateProfile(profilePath)
+			if err != nil {
+				t.Fatalf("❌ failed to load or create profile: %v", err)
 			}
+			if profile.Tunnel.URL != "" {
+				break
+			}
+			time.Sleep(time.Duration(i) * time.Second) // Sleep for a while before trying again
 		}
 	}
 	return profile

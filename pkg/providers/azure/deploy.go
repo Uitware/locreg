@@ -27,6 +27,12 @@ var (
 	webAppsClient           *armappservice.WebAppsClient
 )
 
+type ResourceTracker struct {
+	ResourceGroup  string
+	AppServicePlan string
+	WebApp         string
+}
+
 // Deploy initiates the deployment of resources in Azure
 func Deploy(azureConfig *parser.Config) {
 	log.Println("☁️ Starting deployment...")
@@ -81,30 +87,40 @@ func Deploy(azureConfig *parser.Config) {
 	plansClient = appserviceClientFactory.NewPlansClient()
 	webAppsClient = appserviceClientFactory.NewWebAppsClient()
 
+	// Track created resources
+	tracker := &ResourceTracker{}
+
 	// Create a resource group
 	resourceGroup, err := createResourceGroup(ctx, azureConfig)
 	if err != nil {
+		cleanupResources(ctx, tracker)
 		log.Fatal(err)
 	}
+	tracker.ResourceGroup = azureConfig.Deploy.Provider.Azure.ResourceGroup
 	log.Println("✅ Resource group created:", *resourceGroup.ID)
 
 	// Create an App Service plan
 	appServicePlan, err := createAppServicePlan(ctx, azureConfig)
 	if err != nil {
+		cleanupResources(ctx, tracker)
 		log.Fatal(err)
 	}
+	tracker.AppServicePlan = azureConfig.Deploy.Provider.Azure.AppServicePlan.Name
 	log.Println("✅ App service plan created:", *appServicePlan.ID)
 
 	// Create a Web App
 	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID, tunnelURL)
 	if err != nil {
+		cleanupResources(ctx, tracker)
 		log.Fatal(err)
 	}
+	tracker.WebApp = azureConfig.Deploy.Provider.Azure.AppService.Name
 	log.Println("✅ App service created:", *appService.ID)
 
 	// Write deployment information to the profile
 	err = writeProfile(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)
 	if err != nil {
+		cleanupResources(ctx, tracker)
 		log.Fatalf("❌ Failed to write profile: %v", err)
 	}
 }
@@ -317,4 +333,36 @@ func checkTunnelURLValidity(tunnelURL string) error {
 	}
 
 	return nil
+}
+
+// cleanupResources deletes all created resources if deployment fails
+func cleanupResources(ctx context.Context, tracker *ResourceTracker) {
+	log.Println("🧹 Cleaning up resources...")
+	if tracker.WebApp != "" {
+		log.Printf("🗑️ Deleting Web App: %s...", tracker.WebApp)
+		_, err := webAppsClient.Delete(ctx, tracker.ResourceGroup, tracker.WebApp, nil)
+		if err != nil {
+			log.Printf("❌ Failed to delete Web App: %v", err)
+		} else {
+			log.Printf("✅ Web App deleted: %s", tracker.WebApp)
+		}
+	}
+	if tracker.AppServicePlan != "" {
+		log.Printf("🗑️ Deleting App Service Plan: %s...", tracker.AppServicePlan)
+		_, err := plansClient.Delete(ctx, tracker.ResourceGroup, tracker.AppServicePlan, nil)
+		if err != nil {
+			log.Printf("❌ Failed to delete App Service Plan: %v", err)
+		} else {
+			log.Printf("✅ App Service Plan deleted: %s", tracker.AppServicePlan)
+		}
+	}
+	if tracker.ResourceGroup != "" {
+		log.Printf("🗑️ Deleting Resource Group: %s...", tracker.ResourceGroup)
+		_, err := resourceGroupClient.BeginDelete(ctx, tracker.ResourceGroup, nil)
+		if err != nil {
+			log.Printf("❌ Failed to delete Resource Group: %v", err)
+		} else {
+			log.Printf("✅ Resource Group deletion initiated: %s", tracker.ResourceGroup)
+		}
+	}
 }

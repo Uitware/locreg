@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"locreg/pkg/parser"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/cenkalti/backoff/v4"
 )
 
 var (
@@ -24,8 +27,11 @@ var (
 	webAppsClient           *armappservice.WebAppsClient
 )
 
+// Deploy initiates the deployment of resources in Azure
 func Deploy(azureConfig *parser.Config) {
 	log.Println("☁️ Starting deployment...")
+
+	// Get the Azure subscription ID
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)
@@ -34,12 +40,34 @@ func Deploy(azureConfig *parser.Config) {
 		log.Fatal("❌ AZURE_SUBSCRIPTION_ID is not set.")
 	}
 
+	// Authenticate using Azure credentials
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	ctx := context.Background()
 
+	// Load the user profile to get the tunnel URL
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		log.Fatalf("❌ Failed to get profile path: %v", err)
+	}
+
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		log.Fatalf("❌ Failed to load or create profile: %v", err)
+	}
+
+	// Remove 'https://' prefix from the tunnel URL
+	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
+
+	// Check the validity of the tunnel URL with exponential backoff
+	err = checkTunnelURLValidity(tunnelURL)
+	if err != nil {
+		log.Fatalf("❌ Failed to validate tunnel URL: %v", err)
+	}
+
+	// Initialize Azure resource clients
 	resourcesClientFactory, err = armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -53,30 +81,35 @@ func Deploy(azureConfig *parser.Config) {
 	plansClient = appserviceClientFactory.NewPlansClient()
 	webAppsClient = appserviceClientFactory.NewWebAppsClient()
 
+	// Create a resource group
 	resourceGroup, err := createResourceGroup(ctx, azureConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("✅ Resource group created:", *resourceGroup.ID)
 
+	// Create an App Service plan
 	appServicePlan, err := createAppServicePlan(ctx, azureConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("✅ App service plan created:", *appServicePlan.ID)
 
-	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID)
+	// Create a Web App
+	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID, tunnelURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("✅ App service created:", *appService.ID)
 
+	// Write deployment information to the profile
 	err = writeProfile(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)
 	if err != nil {
 		log.Fatalf("❌ Failed to write profile: %v", err)
 	}
 }
 
+// createResourceGroup creates a new resource group in Azure
 func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armresources.ResourceGroup, error) {
 	log.Println("☁️ Creating Resource Group...")
 	resourceGroupResp, err := resourceGroupClient.CreateOrUpdate(
@@ -92,6 +125,7 @@ func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armr
 	return &resourceGroupResp.ResourceGroup, nil
 }
 
+// createAppServicePlan creates a new App Service plan in Azure
 func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*armappservice.Plan, error) {
 	log.Println("☁️ Creating App Service Plan...")
 	sku := azureConfig.Deploy.Provider.Azure.AppServicePlan.Sku
@@ -122,10 +156,12 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 	return &resp.Plan, nil
 }
 
-func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID string) (*armappservice.Site, error) {
+// createWebApp creates a new Web App in Azure
+func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID, tunnelURL string) (*armappservice.Site, error) {
 	log.Println("☁️ Creating Web App...")
 
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
+	imageConfig := azureConfig.Image
 
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
@@ -137,14 +173,11 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 		return nil, fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
-	// Remove 'https://' prefix from the tunnel URL
-
-	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
-	dockerRegistryURL := profile.Tunnel.URL
+	// Set up app settings for the Docker container
 	appSettings := []*armappservice.NameValuePair{
 		{
 			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_URL"),
-			Value: to.Ptr(dockerRegistryURL), // Use the tunnel URL from profile without 'https://'
+			Value: to.Ptr(fmt.Sprintf("https://%s", tunnelURL)),
 		},
 		{
 			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
@@ -156,6 +189,7 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 		},
 	}
 
+	// Create or update the Web App
 	pollerResp, err := webAppsClient.BeginCreateOrUpdate(
 		ctx,
 		azureConfig.Deploy.Provider.Azure.ResourceGroup,
@@ -166,7 +200,7 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 				ServerFarmID: to.Ptr(appServicePlanID),
 				SiteConfig: &armappservice.SiteConfig{
 					AlwaysOn:       to.Ptr(siteConfig.AlwaysOn),
-					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s/%s:%s", tunnelURL, siteConfig.DockerImage, siteConfig.Tag)),
+					LinuxFxVersion: to.Ptr(fmt.Sprintf("DOCKER|%s/%s:%s", tunnelURL, imageConfig.Name, imageConfig.Tag)),
 					AppSettings:    appSettings,
 				},
 				HTTPSOnly: to.Ptr(true),
@@ -184,13 +218,16 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 	return &resp.Site, nil
 }
 
+// getSubscriptionID retrieves the Azure subscription ID from the Azure CLI
 func getSubscriptionID() (string, error) {
+	// Execute the Azure CLI command to get the subscription ID
 	cmd := exec.Command("az", "account", "show", "--query", "id", "--output", "json")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
 
+	// Parse the JSON output to extract the subscription ID
 	var result string
 	if err := json.Unmarshal(output, &result); err != nil {
 		return "", err
@@ -199,24 +236,84 @@ func getSubscriptionID() (string, error) {
 	return result, nil
 }
 
+// writeProfile updates the profile with the created Azure resources' details
 func writeProfile(resourceGroupName, appServicePlanName, appServiceName string) error {
+	// Get the profile path
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
 		return fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 
+	// Load or create a new profile
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
 		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
+	// Update the profile with the new resource details
 	profile.CloudResources.ResourceGroupName = resourceGroupName
 	profile.CloudResources.AppServicePlanName = appServicePlanName
 	profile.CloudResources.AppServiceName = appServiceName
 
+	// Save the updated profile
 	err = parser.SaveProfile(profile, profilePath)
 	if err != nil {
 		return fmt.Errorf("❌ failed to save profile: %w", err)
+	}
+
+	return nil
+}
+
+// checkTunnelURLValidity checks the validity of the tunnel URL using exponential backoff
+func checkTunnelURLValidity(tunnelURL string) error {
+	// Define the operation to check the tunnel URL
+	operation := func() error {
+		// Check if tunnel URL is empty
+		if tunnelURL == "" {
+			log.Println("❌ Tunnel URL is empty, retrying...")
+			return fmt.Errorf("tunnel URL is empty")
+		}
+
+		// Make an HTTP GET request to the tunnel URL
+		checkURL := fmt.Sprintf("https://%s", tunnelURL)
+		resp, err := http.Get(checkURL)
+		if err != nil {
+			log.Printf("❌ Error checking tunnel URL %s: %v", checkURL, err)
+			return err
+		}
+		defer resp.Body.Close()
+
+		// Check if the response status is OK
+		if resp.StatusCode != http.StatusOK {
+			log.Printf("❌ Invalid response status for URL %s: %s, retrying...", checkURL, resp.Status)
+			return fmt.Errorf("invalid response status: %s", resp.Status)
+		}
+
+		log.Printf("✅ Tunnel URL %s is valid", checkURL)
+		return nil
+	}
+
+	// Generate exponential backoff intervals
+	maxRetries := 5
+	initialInterval := 1 * time.Second
+	intervals := make([]time.Duration, maxRetries)
+	for i := 0; i < maxRetries; i++ {
+		intervals[i] = initialInterval * (1 << i)
+	}
+
+	currentRetry := 0
+
+	// Use backoff.RetryNotify to retry the operation with exponential backoff
+	err := backoff.RetryNotify(operation, backoff.WithMaxRetries(backoff.NewConstantBackOff(1*time.Second), uint64(maxRetries)), func(err error, duration time.Duration) {
+		if currentRetry < maxRetries {
+			duration = intervals[currentRetry]
+			currentRetry++
+		}
+		log.Printf("⏳ Retrying in %s due to error: %v", duration, err)
+		time.Sleep(duration)
+	})
+	if err != nil {
+		return fmt.Errorf("❌ Tunnel URL check failed after retries: %w", err)
 	}
 
 	return nil

@@ -45,10 +45,7 @@ type Config struct {
 				AppService struct {
 					Name       string `yaml:"name" validate:"required"`
 					SiteConfig struct {
-						AlwaysOn                bool   `yaml:"alwaysOn" validate:"required"`
-						DockerRegistryServerUrl string `yaml:"dockerRegistryServerUrl" validate:"required"`
-						DockerImage             string `yaml:"dockerImage" validate:"required"`
-						Tag                     string `yaml:"tag" validate:"required"`
+						AlwaysOn bool `yaml:"alwaysOn" validate:"required"`
 					} `yaml:"siteConfig"`
 				} `yaml:"appService"`
 			} `yaml:"azure"`

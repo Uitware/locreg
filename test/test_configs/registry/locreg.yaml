@@ -1,0 +1,33 @@
+registry:
+  port: 4545
+  tag: "2"
+  image: "registry"
+  name: "my-locreg-test"
+  username: "12"
+  password: "12" # Must be bcrypt encrypted password
+
+image:
+  name: "weather-app"
+  tag: "latest"
+
+tunnel:
+  provider:
+    ngrok:
+
+deploy:
+  provider:
+    azure:
+      location: "East US" # Location of all resources
+      resourceGroup: "myResourceGroup" # Resource group name
+      appServicePlan:
+        name: "myAppServicePlan" # App service plan name
+        sku:
+          name: "S1" # App service plan SKU
+          capacity: 1 # App service plan capacity
+          tier: "STANDARD" # App service plan tier
+        planProperties:
+          reserved: true # App service plan reserved
+      appService:
+        name: "locregstrredvtrhrgewf" # App service name
+        siteConfig:
+          alwaysOn: true # App service always on

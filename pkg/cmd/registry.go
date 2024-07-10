@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/spf13/cobra"
 	"locreg/pkg/local_registry"
 	"locreg/pkg/tunnels/ngrok"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
-
-	"github.com/spf13/cobra"
 )
 
 var registryCmd = &cobra.Command{
@@ -25,18 +22,9 @@ var registryCmd = &cobra.Command{
 		}
 		cmdTunnel := exec.Command(exePath, "tunnel")
 
-		var out bytes.Buffer
-		var stderr bytes.Buffer
-		cmdTunnel.Stdout = &out
-		cmdTunnel.Stderr = &stderr
 		err = cmdTunnel.Run()
 		if err != nil {
-			log.Fatalf("❌ Failed to run tunnel: %v. Output: %v", err, stderr.String())
-		}
-
-		// Check if the output contains the word "fatal"
-		if strings.Contains(stderr.String(), "NGROK_AUTHTOKEN") {
-			log.Fatalf("❌ Fatal error in tunnel: %v", stderr.String())
+			log.Fatalf("❌ Failed to run tunnel: %v.\nCheck NGROK_AUTHTOKEN env variable value", err)
 		}
 
 		if err := local_registry.InitCommand(configFilePath); err != nil {

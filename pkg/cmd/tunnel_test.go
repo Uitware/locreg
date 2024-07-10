@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -119,7 +120,18 @@ func isTunnelAlive(tunnelURL string, t *testing.T) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-func TestTunnelCmd(t *testing.T) {
+func tunnelEnvValidation(t *testing.T, envValue string) bool {
+	t.Setenv("NGROK_AUTHTOKEN", envValue)
+	cmd := exec.Command("go", "run", "../../../main.go", "tunnel")
+	output, err := cmd.CombinedOutput()
+	if err != nil && !strings.Contains(string(output), "NGROK_AUTHTOKEN") {
+		return false
+	} else {
+		return true
+	}
+}
+
+func TestTunnelCmdStart(t *testing.T) {
 	// Get test config file location
 	workingDir := filepath.Join(getProjectRoot(), "test", "test_configs", "tunnel")
 	if err := os.Chdir(workingDir); err != nil {
@@ -147,4 +159,19 @@ func TestTunnelCmd(t *testing.T) {
 	} else {
 		t.Log("✅ tunnel successfully running")
 	}
+}
+
+func TestTunnelCmdEnvValidation(t *testing.T) {
+	if tunnelEnvValidation(t, "") {
+		t.Log("✅ NGROK_AUTHTOKEN env variable is validating")
+	} else {
+		t.Fatalf("NGROK_AUTHTOKEN env variable is validating")
+	}
+
+	if tunnelEnvValidation(t, "sAKDINndadiwnn09n)3g214gu3rj89UH*&@#Y!Jnuuidhawuhdui31hes") {
+		t.Log("✅ NGROK_AUTHTOKEN env variable is validating")
+	} else {
+		t.Fatalf("NGROK_AUTHTOKEN env variable is not validating")
+	}
+
 }

@@ -16,7 +16,7 @@ import (
 
 func StartTunnel(configFilePath string) error {
 	log.Printf(os.Getenv("NGROK_AUTHTOKEN"))
-	if os.Getenv("NGROK_AUTHTOKEN") == "" || len(os.Getenv("NGROK_AUTHTOKEN")) < 49 {
+	if os.Getenv("NGROK_AUTHTOKEN") == "" || len(os.Getenv("NGROK_AUTHTOKEN")) != 49 {
 		return fmt.Errorf("❌ NGROK_AUTHTOKEN environment variable is not set, or set incorrectly. Please " +
 			"validate your ngrok authtoken")
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"locreg/pkg/parser"
 	"locreg/pkg/tunnels/ngrok"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -24,7 +25,10 @@ var tunnelCmd = &cobra.Command{
 				"please wait for the next release or contribute by yourself 😺")
 			return
 		}
-		ngrok.StartTunnel(configFilePath)
+		err = ngrok.StartTunnel(configFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 

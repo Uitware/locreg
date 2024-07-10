@@ -14,12 +14,11 @@ import (
 	"golang.ngrok.com/ngrok/config"
 )
 
-func StartTunnel(configFilePath string) {
+func StartTunnel(configFilePath string) error {
 	log.Printf(os.Getenv("NGROK_AUTHTOKEN"))
 	if os.Getenv("NGROK_AUTHTOKEN") == "" || len(os.Getenv("NGROK_AUTHTOKEN")) < 49 {
-		log.Fatalf("❌ NGROK_AUTHTOKEN environment variable is not set, or set incorrectly. Please " +
+		return fmt.Errorf("❌ NGROK_AUTHTOKEN environment variable is not set, or set incorrectly. Please " +
 			"validate your ngrok authtoken")
-		return
 	}
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -50,13 +49,13 @@ func StartTunnel(configFilePath string) {
 		}
 	}()
 	wg.Wait()
-	return
+	return nil
 }
 
 // runTunnel creates a ngrok tunnel to the Docker registry in forked process for indefinite time
 func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
 	// check if ngrok authtoken is set and is it valid size
-	log.Println("🌐 Creating n	grok tunnel...")
+	log.Println("🌐 Creating ngrok tunnel...")
 	registryUrl := url.URL{
 		Scheme: "http",
 		Host:   fmt.Sprintf("localhost:%d", registryConfig.Registry.Port),

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"locreg/pkg/parser"
+	"log"
 	"os"
 
 	"github.com/docker/docker/api/types/container"
@@ -15,7 +16,6 @@ import (
 
 // RunRegistry runs a local Docker registry container with configuration
 func runRegistry(dockerClient *client.Client, ctx context.Context, config *parser.Config) error {
-
 	// Use configuration values
 	registryPort := fmt.Sprintf("%d", config.Registry.Port)
 	imageVersion := fmt.Sprintf("docker.io/%s:%s", config.Registry.Image, config.Registry.Tag)
@@ -61,21 +61,35 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 
 	err = updateConfig(dockerClient, ctx, resp.ID, config.Registry.Username, config.Registry.Password)
 	if err != nil {
+		defer errorCleanup(resp.ID, &err) // define postpone function to remove container if error occurs
 		return fmt.Errorf("❌ failed to update config: %w", err)
 	}
 
 	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	if err != nil {
+		defer errorCleanup(resp.ID, &err) // define postpone function to remove container if error occurs
 		return fmt.Errorf("❌ failed to start distribution container: %w", err)
 	}
 	fmt.Printf("✅ Container started with ID: %s\n", resp.ID)
 
 	err = writeProfile(resp.ID, config.Registry.Username, config.Registry.Password)
 	if err != nil {
+		defer errorCleanup(resp.ID, &err) // define postpone function to remove container if error occurs
 		return fmt.Errorf("❌ failed to write profile: %w", err)
 	}
-
 	return nil
+}
+
+func errorCleanup(containerID string, err *error) {
+	if err == nil {
+		return
+	}
+	if errDestroy := DestroyLocalRegistry(); errDestroy != nil {
+		cleanupErr := StopAndRemoveContainer(containerID)
+		if cleanupErr != nil {
+			log.Fatalf("Failed to remove container: %v. You will need to do this manualy", cleanupErr)
+		}
+	}
 }
 
 func InitCommand(configFilePath string) error {

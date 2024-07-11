@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spf13/cobra"
 	"locreg/pkg/local_registry"
+	"locreg/pkg/tunnels/ngrok"
 	"log"
 	"os"
 	"os/exec"
-
-	"github.com/spf13/cobra"
 )
 
 var registryCmd = &cobra.Command{
@@ -21,14 +21,18 @@ var registryCmd = &cobra.Command{
 			log.Fatalf("❌ Failed to get executable path: %v", err)
 		}
 		cmdTunnel := exec.Command(exePath, "tunnel")
-		cmdTunnel.Stdout = os.Stdout
-		cmdTunnel.Stderr = os.Stderr
-		if err = cmdTunnel.Run(); err != nil {
-			log.Fatalf("❌ Failed to run tunnel: %v", err)
+
+		err = cmdTunnel.Run()
+		if err != nil {
+			log.Fatalf("❌ Failed to run tunnel: %v.\nCheck NGROK_AUTHTOKEN env variable value", err)
 		}
 
 		if err := local_registry.InitCommand(configFilePath); err != nil {
-			fmt.Println("❌ Error running registry:", err)
+			err := ngrok.DestroyTunnel()
+			if err != nil {
+				log.Fatalf("❌ error destroying tunnel: %v. \nYou need to do this manualy", err)
+			}
+			log.Fatalf("❌ error running registry: %v", err)
 		}
 	},
 }

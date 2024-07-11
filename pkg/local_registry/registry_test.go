@@ -52,11 +52,16 @@ func setUpRegistry(t *testing.T) {
 			if err != nil {
 				t.Fatalf("❌ failed to list containers: %v", err)
 			}
-			err = StopAndRemoveContainer(runningTestContainer[0].ID)
-			if err != nil {
-				t.Fatalf(
-					"❌ failed to stop and remove container. If in CI you may ignore it else delete it manualy: %v",
-					err)
+			// Check if the slice is not empty before trying to access its first element
+			if len(runningTestContainer) > 0 {
+				err = StopAndRemoveContainer(runningTestContainer[0].ID)
+				if err != nil {
+					t.Fatalf(
+						"❌ failed to stop and remove container. If in CI you may ignore it else delete it manually: %v",
+						err)
+				}
+			} else {
+				t.Log("No running containers found")
 			}
 		})
 }
@@ -142,7 +147,25 @@ func TestRunContainer(t *testing.T) {
 		t.Fatal("❌ container does not exist")
 	}
 
-	// Test case 2: Does container creds exist in profile
+	// Test case 3: Does container accessible locally
+	if !isLocalRegistryAccessible(t) {
+		t.Fatalf("❌ failed to access local registry")
+	} else {
+		t.Log("✅ local registry is accessible")
+	}
+}
+
+func TestProfileFilling(t *testing.T) {
+	setUpRegistry(t)
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		t.Fatalf("❌ failed to get profile path: %v", err)
+	}
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		t.Fatalf("❌ failed to load or create profile: %v", err)
+	}
+
 	if profile.LocalRegistry.RegistryID == "" {
 		t.Error("❌ failed to get container ID")
 	}
@@ -152,12 +175,37 @@ func TestRunContainer(t *testing.T) {
 	if profile.LocalRegistry.Password == "" {
 		t.Error("❌ failed to get username")
 	}
+}
 
-	// Test case 3: Does container accessible locally
-	if !isLocalRegistryAccessible(t) {
-		t.Fatalf("❌ failed to access local registry")
+func TestContainerErrorCleanUp(t *testing.T) {
+	setUpRegistry(t)
+
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		t.Fatalf("❌ failed to get profile path: %v", err)
+	}
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		t.Fatalf("❌ failed to load or create profile: %v", err)
+	}
+
+	// Call errorCleanup
+	testError := fmt.Errorf("this is a test error")
+	errorCleanup(profile.LocalRegistry.RegistryID, &testError)
+	// Check if the container still exists
+	if !doesContainerExist(t, profile.LocalRegistry.RegistryID) {
+		t.Fatalf("❌ container still exists after cleanup")
 	} else {
-		t.Log("✅ local registry is accessible")
+		t.Log("✅ container successfully cleaned up")
+	}
+
+	setUpRegistry(t)
+	errorCleanup(profile.LocalRegistry.RegistryID, nil)
+	// Check if the container still exists
+	if doesContainerExist(t, profile.LocalRegistry.RegistryID) {
+		t.Log("✅ container successfully cleaned up")
+	} else {
+		t.Fatalf("❌ container still exists after cleanup")
 	}
 
 }

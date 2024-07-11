@@ -14,7 +14,14 @@ import (
 	"golang.ngrok.com/ngrok/config"
 )
 
-func StartTunnel(configFilePath string) {
+func StartTunnel(configFilePath string) error {
+	if os.Getenv("NGROK_AUTHTOKEN") == "" || len(os.Getenv("NGROK_AUTHTOKEN")) != 49 {
+		return fmt.Errorf("❌ NGROK_AUTHTOKEN environment variable is not set, or set incorrectly. Please " +
+			"validate your ngrok authtoken")
+	}
+	if profile, _ := getProfile(); profile.Tunnel.PID != 0 {
+		return fmt.Errorf("❌ tunnel is already running")
+	}
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -44,16 +51,12 @@ func StartTunnel(configFilePath string) {
 		}
 	}()
 	wg.Wait()
-	return
+	return nil
 }
 
 // runTunnel creates a ngrok tunnel to the Docker registry in forked process for indefinite time
 func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
 	// check if ngrok authtoken is set and is it valid size
-	if os.Getenv("NGROK_AUTHTOKEN") == "" || len(os.Getenv("NGROK_AUTHTOKEN")) < 49 {
-		return fmt.Errorf("❌ NGROK_AUTHTOKEN environment variable is not set, or set incorrectly. Please " +
-			"validate your ngrok authtoken")
-	}
 	log.Println("🌐 Creating ngrok tunnel...")
 	registryUrl := url.URL{
 		Scheme: "http",
@@ -70,15 +73,7 @@ func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
 		return fmt.Errorf("❌ failed to start ngrok tunnel: %v", err)
 	}
 
-	// Load or create profile
-	profilePath, err := parser.GetProfilePath()
-	if err != nil {
-		return fmt.Errorf("❌ failed to get profile path: %w", err)
-	}
-	profile, err := parser.LoadOrCreateProfile(profilePath)
-	if err != nil {
-		return fmt.Errorf("❌ failed to load or create profile: %w", err)
-	}
+	profile, profilePath := getProfile()
 
 	profile.Tunnel.URL = tunnel.URL()
 	profile.Tunnel.PID = os.Getpid()
@@ -89,4 +84,16 @@ func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
 
 	select {} // Keep the program running
 
+}
+
+func getProfile() (*parser.Profile, string) {
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		log.Fatalf("❌ failed to get profile path: %v", err)
+	}
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		log.Fatalf("❌ failed to load or create profile: %v", err)
+	}
+	return profile, profilePath
 }

@@ -20,7 +20,7 @@ func StartTunnel(configFilePath string) error {
 			"validate your ngrok authtoken")
 	}
 	if profile, _ := getProfile(); profile.Tunnel.PID != 0 {
-		return fmt.Errorf("❌ tunnel is already running")
+		return fmt.Errorf("✅ tunnel is already running")
 	}
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -57,7 +57,7 @@ func StartTunnel(configFilePath string) error {
 // runTunnel creates a ngrok tunnel to the Docker registry in forked process for indefinite time
 func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
 	// check if ngrok authtoken is set and is it valid size
-	log.Println("🌐 Creating ngrok tunnel...")
+	log.Println("Creating ngrok tunnel...")
 	registryUrl := url.URL{
 		Scheme: "http",
 		Host:   fmt.Sprintf("localhost:%d", registryConfig.Registry.Port),

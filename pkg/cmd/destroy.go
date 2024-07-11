@@ -14,8 +14,8 @@ import (
 
 var destroyCmd = &cobra.Command{
 	Use:   "destroy all",
-	Short: "🗑 destroy all resources, defined in the locreg config file",
-	Long:  `🗑 destroy all resources, defined in the locreg.yaml config file: local registry, tunnel backend, applicatation backend`,
+	Short: "Destroy all resources, defined in the locreg config file",
+	Long:  `Destroy all resources, defined in the locreg.yaml config file: local registry, tunnel backend, applicatation backend`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := destroyAllResources()
 		if err != nil {

@@ -11,13 +11,13 @@ import (
 
 var envCmd = &cobra.Command{
 	Use:   "env",
-	Short: "🔑 manage environment values used by locreg",
-	Long:  `🔑 view and edit environment values used by locreg.`,
+	Short: "Manage environment values used by locreg",
+	Long:  `View and edit environment values used by locreg.`,
 }
 
 var envEditCmd = &cobra.Command{
 	Use:   "edit",
-	Short: "🔑 edit current environment values used by locreg tool",
+	Short: "Edit current environment values used by locreg tool",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Placeholder for actual editing logic
 		fmt.Println("Editing current environment values...")
@@ -26,11 +26,11 @@ var envEditCmd = &cobra.Command{
 
 var envShowCmd = &cobra.Command{
 	Use:   "show",
-	Short: "🔑 show current environment values used by locreg tool",
+	Short: "Show current environment values used by locreg tool",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Placeholder for actual showing logic
 		envVars := os.Environ()
-		fmt.Println("🔑 Current environment values:")
+		fmt.Println("Current environment values:")
 		for _, env := range envVars {
 			fmt.Println(env)
 		}

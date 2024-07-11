@@ -11,7 +11,7 @@ import (
 )
 
 func Destroy() {
-	log.Println("🗑 Starting destruction...")
+	log.Println("Starting destruction...")
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)
@@ -53,7 +53,7 @@ func Destroy() {
 		if err := deleteWebApp(ctx, profile.CloudResources.AppServiceName, profile.CloudResources.ResourceGroupName); err != nil {
 			log.Printf("❌ Error deleting app service: %v", err)
 		} else {
-			log.Println("App service deleted:", profile.CloudResources.AppServiceName)
+			log.Println("✅ App service deleted:", profile.CloudResources.AppServiceName)
 		}
 	}
 
@@ -75,7 +75,7 @@ func Destroy() {
 }
 
 func deleteResourceGroup(ctx context.Context, resourceGroupName string) error {
-	log.Println("🗑 Deleting Resource Group...")
+	log.Println("Deleting Resource Group...")
 	pollerResp, err := resourceGroupClient.BeginDelete(ctx, resourceGroupName, nil)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func deleteResourceGroup(ctx context.Context, resourceGroupName string) error {
 }
 
 func deleteAppServicePlan(ctx context.Context, appServicePlanName, resourceGroupName string) error {
-	log.Println("🗑 Deleting App Service Plan...")
+	log.Println("Deleting App Service Plan...")
 	_, err := plansClient.Delete(ctx, resourceGroupName, appServicePlanName, nil)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func deleteAppServicePlan(ctx context.Context, appServicePlanName, resourceGroup
 }
 
 func deleteWebApp(ctx context.Context, appServiceName, resourceGroupName string) error {
-	log.Println("🗑 Deleting Web App...")
+	log.Println("Deleting Web App...")
 	_, err := webAppsClient.Delete(ctx, resourceGroupName, appServiceName, nil)
 	if err != nil {
 		return err

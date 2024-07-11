@@ -29,7 +29,7 @@ var (
 
 // Deploy initiates the deployment of resources in Azure
 func Deploy(azureConfig *parser.Config) {
-	log.Println("☁️ Starting deployment...")
+	log.Println("Starting deployment...")
 
 	// Get the Azure subscription ID
 	subscriptionID, err := getSubscriptionID()
@@ -111,7 +111,7 @@ func Deploy(azureConfig *parser.Config) {
 
 // createResourceGroup creates a new resource group in Azure
 func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armresources.ResourceGroup, error) {
-	log.Println("☁️ Creating Resource Group...")
+	log.Println("Creating Resource Group...")
 	resourceGroupResp, err := resourceGroupClient.CreateOrUpdate(
 		ctx,
 		azureConfig.Deploy.Provider.Azure.ResourceGroup,
@@ -127,7 +127,7 @@ func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armr
 
 // createAppServicePlan creates a new App Service plan in Azure
 func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*armappservice.Plan, error) {
-	log.Println("☁️ Creating App Service Plan...")
+	log.Println("Creating App Service Plan...")
 	sku := azureConfig.Deploy.Provider.Azure.AppServicePlan.Sku
 	pollerResp, err := plansClient.BeginCreateOrUpdate(
 		ctx,
@@ -158,7 +158,7 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 
 // createWebApp creates a new Web App in Azure
 func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID, tunnelURL string) (*armappservice.Site, error) {
-	log.Println("☁️ Creating Web App...")
+	log.Println("Creating Web App...")
 
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
 	imageConfig := azureConfig.Image
@@ -309,7 +309,7 @@ func checkTunnelURLValidity(tunnelURL string) error {
 			duration = intervals[currentRetry]
 			currentRetry++
 		}
-		log.Printf("⏳ Retrying in %s due to error: %v", duration, err)
+		log.Printf("Retrying in %s due to error: %v", duration, err)
 		time.Sleep(duration)
 	})
 	if err != nil {

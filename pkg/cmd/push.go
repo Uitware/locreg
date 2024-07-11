@@ -9,8 +9,8 @@ import (
 
 var pushCmd = &cobra.Command{
 	Use:   "push [directory]",
-	Short: "🛠️ build and push a container image to the local registry",
-	Long:  `🛠️ build a container image from the specified directory and push it to the local registry.`,
+	Short: "Build and push a container image to the local registry",
+	Long:  `Build a container image from the specified directory and push it to the local registry.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		dir := args[0]

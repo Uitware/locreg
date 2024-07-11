@@ -118,11 +118,11 @@ func RotateCreds(
 		container.CopyToContainerOptions{},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to copy to container: %w", err)
+		return fmt.Errorf("❌ failed to copy to container: %w", err)
 	}
 
 	if err := dockerClient.ContainerRestart(ctx, containers[0].ID, container.StopOptions{}); err != nil {
-		return fmt.Errorf("failed to restart container: %w", err)
+		return fmt.Errorf("❌ failed to restart container: %w", err)
 	}
 
 	return nil
@@ -134,7 +134,7 @@ func prepareCreds(username, password string) (*bytes.Buffer, error) {
 	if username != "" || password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			return nil, fmt.Errorf("failed to hash password: %w", err)
+			return nil, fmt.Errorf("❌ failed to hash password: %w", err)
 		}
 		credsTarBuffer, err := prepareTar(
 			fmt.Sprintf("%s:%s\n", username, hashedPassword),
@@ -142,7 +142,7 @@ func prepareCreds(username, password string) (*bytes.Buffer, error) {
 		)
 		return credsTarBuffer, nil
 	}
-	return nil, fmt.Errorf("no password or username provided")
+	return nil, fmt.Errorf("❌ no password or username provided")
 }
 
 // prepareTar creates a tar archive with the htpasswd file data inside it stored in same way as htpasswd -Bnb command does
@@ -158,13 +158,13 @@ func prepareTar(fileContent, fileName string) (*bytes.Buffer, error) {
 		Size: int64(len(fileContent)),
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
-		return nil, fmt.Errorf("failed to write tar header: %w", err)
+		return nil, fmt.Errorf("❌ failed to write tar header: %w", err)
 	}
 	if _, err := tw.Write([]byte(fileContent)); err != nil {
-		return nil, fmt.Errorf("failed to write file content to tar: %w", err)
+		return nil, fmt.Errorf("❌ failed to write file content to tar: %w", err)
 	}
 	if err := tw.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close tar writer: %w", err)
+		return nil, fmt.Errorf("❌ failed to close tar writer: %w", err)
 	}
 	return &buf, nil
 }

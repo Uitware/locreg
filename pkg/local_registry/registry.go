@@ -87,7 +87,7 @@ func errorCleanup(containerID string, err *error) {
 	if errDestroy := DestroyLocalRegistry(); errDestroy != nil {
 		cleanupErr := StopAndRemoveContainer(containerID)
 		if cleanupErr != nil {
-			log.Fatalf("Failed to remove container: %v. You will need to do this manualy", cleanupErr)
+			log.Fatalf("❌ Failed to remove container: %v. You will need to do this manualy", cleanupErr)
 		}
 	}
 }

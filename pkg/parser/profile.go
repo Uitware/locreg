@@ -54,13 +54,13 @@ func LoadOrCreateProfile(profilePath string) (*Profile, error) {
 func SaveProfile(profile *Profile, profilePath string) error {
 	file, err := os.OpenFile(profilePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to open profile file: %w", err)
+		return fmt.Errorf("❌ failed to open profile file: %w", err)
 	}
 	defer file.Close()
 
 	encoder := toml.NewEncoder(file)
 	if err := encoder.Encode(profile); err != nil {
-		return fmt.Errorf("failed to write to profile file: %w", err)
+		return fmt.Errorf("❌ failed to write to profile file: %w", err)
 	}
 
 	return nil

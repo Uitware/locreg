@@ -14,8 +14,8 @@ import (
 
 var deployCmd = &cobra.Command{
 	Use:   "deploy [provider]",
-	Short: "🚀 create a cloud resource and deploy your application",
-	Long:  `🚀 create a cloud provider's serverless container runtime resource and deploy your application.`,
+	Short: "Сreate a cloud resource and deploy your application",
+	Long:  `Сreate a cloud provider's serverless container runtime resource and deploy your application.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		provider := args[0]

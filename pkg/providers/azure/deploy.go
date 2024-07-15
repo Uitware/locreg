@@ -338,27 +338,30 @@ func checkTunnelURLValidity(tunnelURL string) error {
 // cleanupResources deletes all created resources if deployment fails
 func cleanupResources(ctx context.Context, tracker *ResourceTracker) {
 	log.Println("Cleaning up resources...")
+
 	if tracker.WebApp != "" {
 		log.Printf("Deleting Web App: %s...", tracker.WebApp)
-		_, err := webAppsClient.Delete(ctx, tracker.ResourceGroup, tracker.WebApp, nil)
+		err := deleteWebApp(ctx, tracker.WebApp, tracker.ResourceGroup)
 		if err != nil {
 			log.Printf("❌ Failed to delete Web App: %v", err)
 		} else {
 			log.Printf("✅ Web App deleted: %s", tracker.WebApp)
 		}
 	}
+
 	if tracker.AppServicePlan != "" {
 		log.Printf("Deleting App Service Plan: %s...", tracker.AppServicePlan)
-		_, err := plansClient.Delete(ctx, tracker.ResourceGroup, tracker.AppServicePlan, nil)
+		err := deleteAppServicePlan(ctx, tracker.AppServicePlan, tracker.ResourceGroup)
 		if err != nil {
 			log.Printf("❌ Failed to delete App Service Plan: %v", err)
 		} else {
 			log.Printf("✅ App Service Plan deleted: %s", tracker.AppServicePlan)
 		}
 	}
+
 	if tracker.ResourceGroup != "" {
 		log.Printf("Deleting Resource Group: %s...", tracker.ResourceGroup)
-		_, err := resourceGroupClient.BeginDelete(ctx, tracker.ResourceGroup, nil)
+		err := deleteResourceGroup(ctx, tracker.ResourceGroup)
 		if err != nil {
 			log.Printf("❌ Failed to delete Resource Group: %v", err)
 		} else {

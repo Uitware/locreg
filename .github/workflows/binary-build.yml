@@ -19,8 +19,12 @@ jobs:
         go-version: '1.22.4'
 
     - name: Azure Login
-      run: |
-        az login --service-principal --username ${{ secrets.AZURE_CLIENT_ID }} --password ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+
     - name: Test
       env:
         NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN_FOR_CI_TESTS }}

@@ -59,16 +59,6 @@ func TestDeploy(t *testing.T) {
 	plansClient = appserviceClientFactory.NewPlansClient()
 	webAppsClient = appserviceClientFactory.NewWebAppsClient()
 
-	// Track created resources
-	tracker := &ResourceTracker{
-		ResourceGroup:  config.Deploy.Provider.Azure.ResourceGroup,
-		AppServicePlan: config.Deploy.Provider.Azure.AppServicePlan.Name,
-		WebApp:         config.Deploy.Provider.Azure.AppService.Name,
-	}
-
-	// Cleanup resources after test
-	defer cleanupResources(ctx, tracker)
-
 	// Test: Create Resource Group
 	t.Run("CreateResourceGroup", func(t *testing.T) {
 		rg, err := createResourceGroup(ctx, config)

@@ -19,7 +19,7 @@ var pushCmd = &cobra.Command{
 		if err != nil {
 			fmt.Println("❌ Error building and pushing image:", err)
 		} else {
-			fmt.Println("❌ Image successfully built and pushed.")
+			fmt.Println("✅ Image successfully built and pushed.")
 		}
 	},
 }

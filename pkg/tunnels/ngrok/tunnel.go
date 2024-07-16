@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,7 @@ type Tunnels struct {
 
 // RunNgrokTunnelContainer runs a Docker container with ngrok image for tunneling local registry
 func RunNgrokTunnelContainer(config *parser.Config) {
+	validateNgrokAuthtokens()
 	ctx := context.Background()
 	containerImage := "ngrok/ngrok:latest"
 	containerPort := "4040"
@@ -150,6 +152,43 @@ func getNetworkId(dockerClient *client.Client) string {
 }
 
 func validateNgrokAuthtokens() bool {
-
-	return false
+	var result map[string]interface{}
+	desiredString := fmt.Sprintf(
+		"The authentication you specified is actually a tunnel credential. Your credential: '%s'.",
+		os.Getenv("NGROK_AUTHTOKEN"),
+	)
+	if os.Getenv("NGROK_AUTHTOKEN") == "" {
+		log.Printf("❌ NGROK_AUTHTOKEN is not set")
+		return false
+	}
+	// Make http request to ngrok API to validate the token
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	req, err := http.NewRequest("GET", "https://api.ngrok.com/agent_ingresses", nil)
+	if err != nil {
+		log.Printf("❌ failed to create request: %v", err)
+		return false
+	}
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("NGROK_AUTHTOKEN"))
+	req.Header.Set("Ngrok-Version", "2")
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("❌ failed to send request: %v", err)
+		return false
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("❌ failed to read response body: %v", err)
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		log.Fatalf("❌ failed to parse JSON: %v", err)
+	}
+	// Check if the response contains the explicit mention of the token being a tunnel credential
+	if !strings.Contains(result["msg"].(string), desiredString) {
+		log.Printf("❌ Token is not valid pleas use another one")
+		return false
+	}
+	return true
 }

@@ -2,12 +2,11 @@ package azure
 
 import (
 	"context"
-	"locreg/pkg/parser"
-	"log"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"locreg/pkg/parser"
+	"log"
 )
 
 func Destroy() {
@@ -51,7 +50,7 @@ func Destroy() {
 
 	if profile.CloudResources.AppServiceName != "" {
 		if err := deleteWebApp(ctx, profile.CloudResources.AppServiceName, profile.CloudResources.ResourceGroupName); err != nil {
-			log.Printf("❌ Error deleting app service: %v", err)
+			handleAzureError(err)
 		} else {
 			log.Println("✅ App service deleted:", profile.CloudResources.AppServiceName)
 		}
@@ -59,7 +58,7 @@ func Destroy() {
 
 	if profile.CloudResources.AppServicePlanName != "" {
 		if err := deleteAppServicePlan(ctx, profile.CloudResources.AppServicePlanName, profile.CloudResources.ResourceGroupName); err != nil {
-			log.Printf("❌ Error deleting app service plan: %v", err)
+			handleAzureError(err)
 		} else {
 			log.Println("✅ App service plan deleted:", profile.CloudResources.AppServicePlanName)
 		}
@@ -67,7 +66,7 @@ func Destroy() {
 
 	if profile.CloudResources.ResourceGroupName != "" {
 		if err := deleteResourceGroup(ctx, profile.CloudResources.ResourceGroupName); err != nil {
-			log.Printf("❌ Error deleting resource group: %v", err)
+			handleAzureError(err)
 		} else {
 			log.Println("✅ Resource group deleted:", profile.CloudResources.ResourceGroupName)
 		}

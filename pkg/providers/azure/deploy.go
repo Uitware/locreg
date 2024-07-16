@@ -94,7 +94,8 @@ func Deploy(azureConfig *parser.Config) {
 	resourceGroup, err := createResourceGroup(ctx, azureConfig)
 	if err != nil {
 		cleanupResources(ctx, tracker)
-		log.Fatal(err)
+		handleAzureError(err)
+		return
 	}
 	tracker.ResourceGroup = azureConfig.Deploy.Provider.Azure.ResourceGroup
 	log.Println("✅ Resource group created:", *resourceGroup.ID)
@@ -103,7 +104,8 @@ func Deploy(azureConfig *parser.Config) {
 	appServicePlan, err := createAppServicePlan(ctx, azureConfig)
 	if err != nil {
 		cleanupResources(ctx, tracker)
-		log.Fatal(err)
+		handleAzureError(err)
+		return
 	}
 	tracker.AppServicePlan = azureConfig.Deploy.Provider.Azure.AppServicePlan.Name
 	log.Println("✅ App service plan created:", *appServicePlan.ID)
@@ -112,7 +114,8 @@ func Deploy(azureConfig *parser.Config) {
 	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID, tunnelURL)
 	if err != nil {
 		cleanupResources(ctx, tracker)
-		log.Fatal(err)
+		handleAzureError(err)
+		return
 	}
 	tracker.WebApp = azureConfig.Deploy.Provider.Azure.AppService.Name
 	log.Println("✅ App service created:", *appService.ID)
@@ -121,7 +124,8 @@ func Deploy(azureConfig *parser.Config) {
 	err = writeProfile(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)
 	if err != nil {
 		cleanupResources(ctx, tracker)
-		log.Fatalf("❌ Failed to write profile: %v", err)
+		handleAzureError(err)
+		return
 	}
 }
 

@@ -33,10 +33,14 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 	containerImage := "ngrok/ngrok:latest"
 	containerPort := "4040"
 	port, err := nat.NewPort("tcp", containerPort)
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Fatalf("❌ failed to run on port: %v", err)
 	}
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Fatalf("❌ failed to create Docker client: %v", err)
+	}
+
 	portBindings := nat.PortMap{ // Container port bindings
 		port: []nat.PortBinding{
 			{
@@ -46,9 +50,6 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 		},
 	}
 
-	if err != nil {
-		log.Fatalf("❌ failed to create Docker client: %v", err)
-	}
 	networkId := getNetworkId(dockerClient)
 
 	if networkId == "" {

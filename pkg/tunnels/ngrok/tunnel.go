@@ -90,6 +90,9 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 		nil,
 		"locreg-ngrok",
 	)
+	if err != nil {
+		log.Fatalf("❌ failed to create container: %v", err)
+	}
 	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	if err != nil {
 		defer errorCleanup(resp.ID, err)

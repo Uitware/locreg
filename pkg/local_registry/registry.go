@@ -136,6 +136,13 @@ func getNetworkId(dockerClient *client.Client) string {
 	if err != nil {
 		log.Fatalf("❌ failed to list networks: %v", err)
 	}
+	if len(resp) == 0 {
+		netResp, err := dockerClient.NetworkCreate(context.Background(), "locreg-ngrok", network.CreateOptions{})
+		if err != nil {
+			log.Fatalf("❌ failed to create network: %v", err)
+		}
+		return netResp.ID
+	}
 	return resp[0].ID
 }
 

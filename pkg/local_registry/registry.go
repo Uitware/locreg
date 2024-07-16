@@ -3,6 +3,8 @@ package local_registry
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	"io"
 	"locreg/pkg/parser"
 	"log"
@@ -51,7 +53,11 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 		&container.HostConfig{
 			PortBindings: portBindings,
 		},
-		nil,
+		&network.NetworkingConfig{
+			EndpointsConfig: map[string]*network.EndpointSettings{
+				getNetworkId(dockerClient): {}, // connect container to ngrok network os it can be tunneled
+			},
+		},
 		nil,
 		config.Registry.Name,
 	)
@@ -118,6 +124,26 @@ func RotateCommand(configFilePath string) error {
 		return fmt.Errorf("❌ failed to create Docker client: %w", err)
 	}
 	return RotateCreds(cli, ctx, config.Registry.Username, config.Registry.Password, config.Registry.Name)
+}
+
+func getNetworkId(dockerClient *client.Client) string {
+	// retrieve network ID that was created for ngrok tunnel if it exists
+	resp, err := dockerClient.NetworkList(
+		context.Background(),
+		network.ListOptions{
+			Filters: filters.NewArgs(filters.Arg("name", "locreg-ngrok")),
+		})
+	if err != nil {
+		log.Fatalf("❌ failed to list networks: %v", err)
+	}
+	if len(resp) == 0 {
+		netResp, err := dockerClient.NetworkCreate(context.Background(), "locreg-ngrok", network.CreateOptions{})
+		if err != nil {
+			log.Fatalf("❌ failed to create network: %v", err)
+		}
+		return netResp.ID
+	}
+	return resp[0].ID
 }
 
 // writeProfile writes the container ID and credentials to the profile file in TOML format

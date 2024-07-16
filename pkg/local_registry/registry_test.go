@@ -3,12 +3,12 @@ package local_registry
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	"locreg/pkg/parser"
+	"locreg/test/locreg_testutils"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -66,36 +66,6 @@ func setUpRegistry(t *testing.T) {
 		})
 }
 
-func getContainers(t *testing.T, containerID string) []types.Container {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		t.Fatalf("❌ failed to create Docker client: %v", err)
-	}
-	containers, err := dockerClient.ContainerList(
-		context.Background(),
-		container.ListOptions{
-			Filters: filters.NewArgs(
-				filters.Arg("id", containerID),
-			),
-		})
-	if err != nil {
-		t.Fatalf("❌ failed to list containers: %v", err)
-	}
-	return containers
-}
-
-func doesContainerExist(t *testing.T, containerID string) bool {
-	return getContainers(t, containerID) != nil
-}
-
-func isContainerRunning(t *testing.T, containerID string) bool {
-	containers := getContainers(t, containerID)
-	if len(containers) == 0 {
-		return false
-	}
-	return containers[0].State == "running"
-}
-
 func isLocalRegistryAccessible(t *testing.T) bool {
 	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "registry", "locreg.yaml"))
 	if err != nil {
@@ -136,9 +106,9 @@ func TestRunContainer(t *testing.T) {
 	}
 
 	// Test case 1: Does container exist and running or not
-	if doesContainerExist(t, profile.LocalRegistry.RegistryID) {
+	if locreg_testutils.DoesContainerExist(t, profile.LocalRegistry.RegistryID) {
 		t.Log("✅ container exist")
-		if !isContainerRunning(t, profile.LocalRegistry.RegistryID) {
+		if !locreg_testutils.IsContainerRunning(t, profile.LocalRegistry.RegistryID) {
 			t.Fatalf("❌ container is not running")
 		} else {
 			t.Log("✅ container is running")
@@ -193,7 +163,7 @@ func TestContainerErrorCleanUp(t *testing.T) {
 	testError := fmt.Errorf("this is a test error")
 	errorCleanup(profile.LocalRegistry.RegistryID, &testError)
 	// Check if the container still exists
-	if !doesContainerExist(t, profile.LocalRegistry.RegistryID) {
+	if !locreg_testutils.DoesContainerExist(t, profile.LocalRegistry.RegistryID) {
 		t.Fatalf("❌ container still exists after cleanup")
 	} else {
 		t.Log("✅ container successfully cleaned up")
@@ -202,7 +172,7 @@ func TestContainerErrorCleanUp(t *testing.T) {
 	setUpRegistry(t)
 	errorCleanup(profile.LocalRegistry.RegistryID, nil)
 	// Check if the container still exists
-	if doesContainerExist(t, profile.LocalRegistry.RegistryID) {
+	if locreg_testutils.DoesContainerExist(t, profile.LocalRegistry.RegistryID) {
 		t.Log("✅ container successfully cleaned up")
 	} else {
 		t.Fatalf("❌ container still exists after cleanup")

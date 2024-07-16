@@ -15,8 +15,8 @@ type Profile struct {
 		Password   string `toml:"password"`
 	} `toml:"local_registry"`
 	Tunnel struct {
-		URL string `toml:"tunnel_url"`
-		PID int    `toml:"pid"`
+		URL         string `toml:"tunnel_url"`
+		ContainerID string `toml:"tunnel_container_id"`
 	} `toml:"tunnel"`
 	CloudResources struct {
 		ResourceGroupName  string `toml:"resource_group_name"`

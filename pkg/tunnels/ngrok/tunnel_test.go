@@ -47,8 +47,7 @@ func openDummyPort(t *testing.T) {
 
 // ConfigAndProfile returns config
 func getConfig(t *testing.T) *parser.Config {
-	t.Log(filepath.Join(getProjectRoot(), "test", "test_configs", "tunnel", "locreg.yaml"))
-	config, err := parser.LoadConfig("/home/molip/GolandProjects/locreg/test/test_configs/tunnel/locreg.yaml")
+	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "tunnel", "locreg.yaml"))
 	if err != nil {
 		t.Fatalf("❌ failed to load config: %v", err)
 	}

@@ -2,98 +2,154 @@ package ngrok
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
+	"io"
 	"locreg/pkg/parser"
 	"log"
-	"net/url"
+	"net/http"
 	"os"
-	"sync"
-	"syscall"
-
-	"golang.ngrok.com/ngrok"
-	"golang.ngrok.com/ngrok/config"
+	"time"
 )
 
-func StartTunnel(configFilePath string) error {
-	if os.Getenv("NGROK_AUTHTOKEN") == "" || len(os.Getenv("NGROK_AUTHTOKEN")) != 49 {
-		return fmt.Errorf("❌ NGROK_AUTHTOKEN environment variable is not set, or set incorrectly. Please " +
-			"validate your ngrok authtoken")
-	}
-	if profile, _ := getProfile(); profile.Tunnel.PID != 0 {
-		return fmt.Errorf("✅ tunnel is already running")
-	}
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// Detach the process from the terminal
-		// create child process and then detach from parent process
-		pid, _, _ := syscall.RawSyscall(syscall.SYS_FORK, 0, 0, 0)
-		if pid < 0 {
-			log.Println(fmt.Errorf("❌ failed to fork process: %v", pid))
-			return
-		} else if pid > 0 {
-			// If we got a good PID, then we call exit the parent process.
-			log.Println(pid)
-			return
-		}
-
-		ctx := context.Background()
-		registryConfig, err := parser.LoadConfig(configFilePath)
-		if err != nil {
-			log.Println(fmt.Errorf("❌ failed to load config: %w", err))
-			return
-		}
-		err = runTunnel(ctx, registryConfig)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}()
-	wg.Wait()
-	return nil
+type Tunnels struct {
+	Tunnels []struct {
+		Name      string `json:"ID"`
+		PublicURL string `json:"public_url"`
+	} `json:"tunnels"`
 }
 
-// runTunnel creates a ngrok tunnel to the Docker registry in forked process for indefinite time
-func runTunnel(ctx context.Context, registryConfig *parser.Config) error {
-	// check if ngrok authtoken is set and is it valid size
-	log.Println("Creating ngrok tunnel...")
-	registryUrl := url.URL{
-		Scheme: "http",
-		Host:   fmt.Sprintf("localhost:%d", registryConfig.Registry.Port),
-		Path:   "/", // This is the API version for Docker registry
+// RunNgrokTunnelContainer runs a Docker container with ngrok image for tunneling local registry
+func RunNgrokTunnelContainer(config *parser.Config) {
+	ctx := context.Background()
+	containerImage := "ngrok/ngrok:latest"
+	containerPort := "4040"
+	port, err := nat.NewPort("tcp", containerPort)
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Fatalf("❌ failed to run on port: %v", err)
 	}
-	tunnel, err := ngrok.ListenAndForward(
+	portBindings := nat.PortMap{ // Container port bindings
+		port: []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: containerPort,
+			},
+		},
+	}
+
+	if err != nil {
+		log.Fatalf("❌ failed to create Docker client: %v", err)
+	}
+	networkId := getNetworkId(dockerClient)
+
+	if networkId == "" {
+		netResp, err := dockerClient.NetworkCreate(context.Background(), "locreg-ngrok", network.CreateOptions{})
+		if err != nil {
+			log.Fatalf("❌ failed to create network: %v", err)
+		}
+		networkId = netResp.ID
+	}
+	// Create container
+	imagePuller, err := dockerClient.ImagePull(ctx, containerImage, image.PullOptions{})
+	if err != nil {
+		log.Fatalf("❌ failed to pull ngrok image: %v", err)
+	}
+	defer imagePuller.Close()
+	io.Copy(os.Stdout, imagePuller)
+
+	resp, err := dockerClient.ContainerCreate(
 		ctx,
-		&registryUrl,
-		config.HTTPEndpoint(),
-		ngrok.WithAuthtokenFromEnv(), // use NGROK_AUTHTOKEN environment variable
+		&container.Config{
+			Image: containerImage,
+			Cmd:   []string{"http", fmt.Sprintf("%v:%v", config.Registry.Name, "5000")},
+			Env: []string{
+				"NGROK_AUTHTOKEN=" + os.Getenv("NGROK_AUTHTOKEN"),
+			},
+			ExposedPorts: nat.PortSet{
+				port: struct{}{},
+			},
+		},
+		&container.HostConfig{
+			PortBindings: portBindings, // expose port 4040 for accessing ngrok api
+		},
+		&network.NetworkingConfig{
+			EndpointsConfig: map[string]*network.EndpointSettings{
+				networkId: {},
+			},
+		},
+		nil,
+		"locreg-ngrok",
 	)
+	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	if err != nil {
-		return fmt.Errorf("❌ failed to start ngrok tunnel: %v", err)
+		defer errorCleanup(resp.ID, err)
+		log.Printf("❌ failed to start ngrok container: %v", err)
 	}
-
-	profile, profilePath := getProfile()
-
-	profile.Tunnel.URL = tunnel.URL()
-	profile.Tunnel.PID = os.Getpid()
-	err = parser.SaveProfile(profile, profilePath)
-	if err != nil {
-		return fmt.Errorf("❌ failed to save profile: %w", err)
+	if err = writeToProfile(resp.ID); err != nil {
+		defer errorCleanup(resp.ID, err)
+		log.Fatalf("❌ failed to write to profile: %v", err)
 	}
-
-	select {} // Keep the program running
-
 }
 
-func getProfile() (*parser.Profile, string) {
+// writeToProfile writes the container ID and credentials to the profile file in TOML format
+func writeToProfile(dockerId string) error {
+	var tunnelsResponse Tunnels
+	var resp *http.Response
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
-		log.Fatalf("❌ failed to get profile path: %v", err)
+		return fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
-		log.Fatalf("❌ failed to load or create profile: %v", err)
+		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
-	return profile, profilePath
+	// Get tunnel URL from ngrok container  API
+	for i := 0; i < 5; i++ {
+		resp, err = http.Get("http://127.0.0.1:4040/api/tunnels")
+		if err != nil {
+			time.Sleep(time.Duration(i) * time.Second) // Wait for 5 seconds before retrying
+			continue
+		}
+		break
+	}
+	err = json.NewDecoder(resp.Body).Decode(&tunnelsResponse)
+	if err != nil {
+		return fmt.Errorf("❌ failed to decode response body: %v", err)
+	}
+	// write to profile
+	profile.Tunnel.ContainerID = dockerId
+	profile.Tunnel.URL = tunnelsResponse.Tunnels[0].PublicURL
+	err = parser.SaveProfile(profile, profilePath)
+	if err != nil {
+		return fmt.Errorf("❌ failed to write profile: %w", err)
+	}
+
+	return nil
+}
+
+func getNetworkId(dockerClient *client.Client) string {
+	resp, err := dockerClient.NetworkList(
+		context.Background(),
+		network.ListOptions{
+			Filters: filters.NewArgs(filters.Arg("name", "locreg-ngrok")),
+		})
+	if err != nil {
+		log.Fatalf("❌ failed to list networks: %v", err)
+	}
+	if len(resp) == 0 {
+		return ""
+	}
+	return resp[0].ID
+}
+
+func validateNgrokAuthtokens() bool {
+
+	return false
 }

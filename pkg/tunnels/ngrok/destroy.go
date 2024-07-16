@@ -2,9 +2,9 @@ package ngrok
 
 import (
 	"fmt"
+	"locreg/pkg/local_registry"
 	"locreg/pkg/parser"
 	"log"
-	"syscall"
 )
 
 func DestroyTunnel() error {
@@ -12,20 +12,30 @@ func DestroyTunnel() error {
 	if err != nil {
 		return fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
-
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
 		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
-	if profile.Tunnel.PID == 0 {
-		return fmt.Errorf("❌ no tunnel PID found in profile")
+	if profile.Tunnel.ContainerID == "" {
+		return fmt.Errorf("❌ no tunnel container running found found in profile")
 	}
+	err = local_registry.StopAndRemoveContainer(profile.Tunnel.ContainerID)
+	if err != nil {
+		return fmt.Errorf("❌ failed to stop or remove tunnel container: %w", err)
 
-	// Attempt to kill the process with the stored PID
-	if err := syscall.Kill(profile.Tunnel.PID, syscall.SIGTERM); err != nil {
-		return fmt.Errorf("❌ failed to kill tunnel process: %w", err)
 	}
-	log.Printf("❌ Tunnel process with PID %d terminated", profile.Tunnel.PID)
+	log.Printf("❌ Tunnel container with container ID %s terminated", profile.Tunnel.ContainerID)
+
 	return nil
+}
+
+func errorCleanup(containerID string, cleanupErr error) {
+	if cleanupErr == nil {
+		return
+	}
+	err := local_registry.StopAndRemoveContainer(containerID)
+	if err != nil {
+		log.Fatalf("❌ failed to stop or remove container after error if in CI ignore else do this on your own: %v", err)
+	}
 }

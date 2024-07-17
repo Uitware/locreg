@@ -3,9 +3,11 @@ package azure
 import (
 	"context"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"locreg/pkg/parser"
 
@@ -22,10 +24,27 @@ func getProjectRoot() string {
 	dir = filepath.Join(dir, "..", "..", "..")
 	return dir
 }
+func generateRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+var ResourceGroup = "locreg-test-rg" + generateRandomString(5)
+var AppServicePlanName = "locreg-test-plan" + generateRandomString(5)
+var AppServiceName = "locreg-test-app" + generateRandomString(5)
 
 func TestDeploy(t *testing.T) {
 	// Load test configuration
 	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "locreg.yaml"))
+	config.Deploy.Provider.Azure.ResourceGroup = ResourceGroup
+	config.Deploy.Provider.Azure.AppServicePlan.Name = AppServicePlanName
+	config.Deploy.Provider.Azure.AppService.Name = AppServiceName
+
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
@@ -96,6 +115,9 @@ func TestDeploy(t *testing.T) {
 func TestCleanupResources(t *testing.T) {
 	// Load test configuration
 	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "locreg.yaml"))
+	config.Deploy.Provider.Azure.ResourceGroup = ResourceGroup
+	config.Deploy.Provider.Azure.AppServicePlan.Name = AppServicePlanName
+	config.Deploy.Provider.Azure.AppService.Name = AppServiceName
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}

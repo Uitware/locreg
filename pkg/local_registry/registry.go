@@ -3,17 +3,14 @@ package local_registry
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/network"
-	"io"
-	"locreg/pkg/parser"
-	"log"
-	"os"
-
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"locreg/pkg/parser"
+	"log"
 )
 
 // RunRegistry runs a local Docker registry container with configuration
@@ -41,9 +38,9 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 	if err != nil {
 		return fmt.Errorf("❌ failed to pull distribution image: %w", err)
 	}
-	defer imagePuller.Close()
-	io.Copy(os.Stdout, imagePuller)
-
+	if err := PrintLog(imagePuller); err != nil {
+		log.Fatalf("❌ failed to pull image: %v", err)
+	}
 	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
 		Image: imageVersion, // Local registry image
 		ExposedPorts: nat.PortSet{

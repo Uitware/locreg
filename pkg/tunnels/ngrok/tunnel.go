@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"io"
+	"locreg/pkg/local_registry"
 	"locreg/pkg/parser"
 	"log"
 	"net/http"
@@ -64,8 +65,9 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 	if err != nil {
 		log.Fatalf("❌ failed to pull ngrok image: %v", err)
 	}
-	defer imagePuller.Close()
-	io.Copy(os.Stdout, imagePuller)
+	if err := local_registry.PrintLog(imagePuller); err != nil {
+		log.Fatalf("❌ failed to pull image: %v", err)
+	}
 
 	resp, err := dockerClient.ContainerCreate(
 		ctx,

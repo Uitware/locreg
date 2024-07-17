@@ -1,13 +1,10 @@
 package local_registry
 
 import (
-	"bufio"
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"locreg/pkg/parser"
 	"time"
 
@@ -17,15 +14,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 )
-
-type ErrorLine struct {
-	Error       string      `json:"error"`
-	ErrorDetail ErrorDetail `json:"errorDetail"`
-}
-
-type ErrorDetail struct {
-	Message string `json:"message"`
-}
 
 func BuildCommand(configFilePath string, dir string) error {
 	config, err := parser.LoadConfig(configFilePath)
@@ -68,7 +56,7 @@ func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.C
 	}
 	defer buildResponse.Body.Close()
 
-	if err := printLog(buildResponse.Body); err != nil {
+	if err := PrintLog(buildResponse.Body); err != nil {
 		return fmt.Errorf("❌ error during image build: %w", err)
 	}
 
@@ -86,29 +74,8 @@ func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.C
 	}
 	defer pushResponse.Close()
 
-	if err := printLog(pushResponse); err != nil {
+	if err := PrintLog(pushResponse); err != nil {
 		return fmt.Errorf("❌ error during image push: %w", err)
-	}
-
-	return nil
-}
-
-func printLog(rd io.Reader) error {
-	var lastLine string
-
-	scanner := bufio.NewScanner(rd)
-	for scanner.Scan() {
-		lastLine = scanner.Text()
-		fmt.Println(scanner.Text())
-	}
-
-	errLine := &ErrorLine{}
-	if err := json.Unmarshal([]byte(lastLine), errLine); err == nil && errLine.Error != "" {
-		return errors.New(errLine.Error)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return err
 	}
 
 	return nil

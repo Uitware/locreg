@@ -41,7 +41,6 @@ func GetNonNilFields(logString DockerEngineLogString) (result string) {
 func PrintLog(rd io.Reader) error {
 	var lastLine string
 	var logString DockerEngineLogString
-	log.SetFlags(0) // remove timestamp from logs entry
 
 	scanner := bufio.NewScanner(rd)
 	for scanner.Scan() {

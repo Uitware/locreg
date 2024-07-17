@@ -28,7 +28,9 @@ type Tunnels struct {
 
 // RunNgrokTunnelContainer runs a Docker container with ngrok image for tunneling local registry
 func RunNgrokTunnelContainer(config *parser.Config) {
-	validateNgrokAuthtokens()
+	if !validateNgrokAuthtokens() {
+		return
+	}
 	ctx := context.Background()
 	containerImage := "ngrok/ngrok:latest"
 	containerPort := "4040"
@@ -155,6 +157,9 @@ func getNetworkId(dockerClient *client.Client) string {
 	return resp[0].ID
 }
 
+// validateNgrokAuthtokens validates the ngrok authtoken
+// make request to ngrok API to validate the token and check if it is a tunnel credential
+// if so return true else return false
 func validateNgrokAuthtokens() bool {
 	var result map[string]interface{}
 	desiredString := fmt.Sprintf(

@@ -19,9 +19,10 @@ type Profile struct {
 		ContainerID string `toml:"tunnel_container_id"`
 	} `toml:"tunnel"`
 	CloudResources struct {
-		ResourceGroupName  string `toml:"resource_group_name"`
-		AppServicePlanName string `toml:"app_service_plan_name"`
-		AppServiceName     string `toml:"app_service_name"`
+		ResourceGroupName     string `toml:"resource_group_name"`
+		AppServicePlanName    string `toml:"app_service_plan_name"`
+		AppServiceName        string `toml:"app_service_name"`
+		ContainerInstanceName string `toml:"container_instance_name"`
 	} `toml:"cloud_resources"`
 }
 

@@ -2,114 +2,84 @@ package parser
 
 import (
 	"fmt"
-	"os"
-	"reflect"
-
-	"gopkg.in/yaml.v2"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
 	Registry struct {
-		Port     int    `yaml:"port" validate:"required"`
-		Tag      string `yaml:"tag" validate:"required"`
-		Name     string `yaml:"name" validate:"required"`
-		Image    string `yaml:"image" validate:"required"`
-		Username string `yaml:"username" validate:"required"`
-		Password string `yaml:"password" validate:"required"`
-	} `yaml:"registry"`
+		Port     int    `mapstructure:"port"`
+		Tag      string `mapstructure:"tag"`
+		Name     string `mapstructure:"name"`
+		Image    string `mapstructure:"image"`
+		Username string `mapstructure:"username"`
+		Password string `mapstructure:"password"`
+	} `mapstructure:"registry"`
 	Image struct {
-		Name string `yaml:"name" validate:"required"`
-		Tag  string `yaml:"tag" validate:"required"`
-	} `yaml:"image"`
+		Name string `mapstructure:"name"`
+		Tag  string `mapstructure:"tag"`
+	} `mapstructure:"image"`
 	Tunnel struct {
 		Provider struct {
-			Ngrok struct{} `yaml:"ngrok" validate:"required"`
-		} `yaml:"provider" validate:"required"`
-	} `yaml:"tunnel" validate:"required"`
+			Ngrok struct{} `mapstructure:"ngrok"`
+		} `mapstructure:"provider"`
+	} `mapstructure:"tunnel"`
 	Deploy struct {
 		Provider struct {
 			Azure struct {
-				Location       string `yaml:"location" validate:"required"`
-				ResourceGroup  string `yaml:"resourceGroup" validate:"required"`
+				Location       string `mapstructure:"location"`
+				ResourceGroup  string `mapstructure:"resourceGroup"`
 				AppServicePlan struct {
-					Name string `yaml:"name" validate:"required"`
+					Name string `mapstructure:"name"`
 					Sku  struct {
-						Name     string `yaml:"name" validate:"required"`
-						Capacity int    `yaml:"capacity" validate:"required"`
-						Tier     string `yaml:"tier" validate:"required"`
-					} `yaml:"sku"`
+						Name     string `mapstructure:"name"`
+						Capacity int    `mapstructure:"capacity"`
+						Tier     string `mapstructure:"tier"`
+					} `mapstructure:"sku"`
 					PlanProperties struct {
-						Reserved bool `yaml:"reserved" validate:"required"`
-					} `yaml:"planProperties"`
-				} `yaml:"appServicePlan"`
+						Reserved bool `mapstructure:"reserved"`
+					} `mapstructure:"planProperties"`
+				} `mapstructure:"appServicePlan"`
 				AppService struct {
-					Name       string `yaml:"name" validate:"required"`
+					Name       string `mapstructure:"name"`
 					SiteConfig struct {
-						AlwaysOn bool `yaml:"alwaysOn" validate:"required"`
-					} `yaml:"siteConfig"`
-				} `yaml:"appService"`
-			} `yaml:"azure"`
-		} `yaml:"provider"`
-	} `yaml:"deploy"`
+						AlwaysOn bool `mapstructure:"alwaysOn"`
+					} `mapstructure:"siteConfig"`
+				} `mapstructure:"appService"`
+				ContainerInstance struct {
+					Name          string `mapstructure:"name"`
+					OsType        string `mapstructure:"osType"`
+					RestartPolicy string `mapstructure:"restartPolicy"`
+					IpAddress     struct {
+						Type  string `mapstructure:"type"`
+						Ports []struct {
+							Port     int    `mapstructure:"port"`
+							Protocol string `mapstructure:"protocol"`
+						} `mapstructure:"ports"`
+					} `mapstructure:"ipAddress"`
+					Resources struct {
+						Requests struct {
+							Cpu    float64 `mapstructure:"cpu"`
+							Memory float64 `mapstructure:"memory"`
+						} `mapstructure:"requests"`
+					} `mapstructure:"resources"`
+				} `mapstructure:"containerInstance"`
+			} `mapstructure:"azure"`
+		} `mapstructure:"provider"`
+	} `mapstructure:"deploy"`
 }
 
 func LoadConfig(filePath string) (*Config, error) {
-	var config Config
-	data, err := os.ReadFile(filePath)
-	if err != nil {
+	viper.SetConfigFile(filePath)
+	viper.SetConfigType("yaml")
+
+	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("❌ error reading config file: %v", err)
 	}
 
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
+	var config Config
+	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("❌ error unmarshaling config file: %v", err)
 	}
 
-	err = validateConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
 	return &config, nil
-}
-
-func validateConfig(config Config) error {
-	v := reflect.ValueOf(config)
-	return validateStruct(v)
-}
-
-func validateStruct(v reflect.Value) error {
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		fieldType := v.Type().Field(i)
-
-		if field.Kind() == reflect.Struct {
-			if err := validateStruct(field); err != nil {
-				return err
-			}
-		} else if tag := fieldType.Tag.Get("validate"); tag == "required" {
-			if isEmptyValue(field) {
-				return fmt.Errorf("❌ missing required field: %s", fieldType.Name)
-			}
-		}
-	}
-	return nil
-}
-
-func isEmptyValue(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		return v.Len() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		return v.IsNil()
-	}
-	return false
 }

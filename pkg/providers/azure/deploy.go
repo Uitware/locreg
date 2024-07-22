@@ -191,7 +191,7 @@ func cleanupResources(ctx context.Context, tracker *ResourceTracker) {
 		log.Printf("Deleting Web App: %s...", tracker.WebApp)
 		err := deleteWebApp(ctx, tracker.WebApp, tracker.ResourceGroup)
 		if err != nil {
-			log.Printf("❌ Failed to delete Web App: %v", err)
+			log.Fatalf("❌ Failed to delete Web App: %v", err)
 		} else {
 			log.Printf("✅ Web App deleted: %s", tracker.WebApp)
 		}
@@ -201,28 +201,27 @@ func cleanupResources(ctx context.Context, tracker *ResourceTracker) {
 		log.Printf("Deleting App Service Plan: %s...", tracker.AppServicePlan)
 		err := deleteAppServicePlan(ctx, tracker.AppServicePlan, tracker.ResourceGroup)
 		if err != nil {
-			log.Printf("❌ Failed to delete App Service Plan: %v", err)
+			log.Fatalf("❌ Failed to delete App Service Plan: %v", err)
 		} else {
 			log.Printf("✅ App Service Plan deleted: %s", tracker.AppServicePlan)
-		}
-	}
-
-	if tracker.ResourceGroup != "" {
-		log.Printf("Deleting Resource Group: %s...", tracker.ResourceGroup)
-		err := deleteResourceGroup(ctx, tracker.ResourceGroup)
-		if err != nil {
-			log.Printf("❌ Failed to delete Resource Group: %v", err)
-		} else {
-			log.Printf("✅ Resource Group deletion initiated: %s", tracker.ResourceGroup)
 		}
 	}
 	if tracker.ContainterInstance != "" {
 		log.Printf("Deleting Container Instance: %s...", tracker.ContainterInstance)
 		err := deleteContainerInstance(ctx, tracker.ContainterInstance, tracker.ResourceGroup)
 		if err != nil {
-			log.Printf("❌ Failed to delete Container Instance: %v", err)
+			log.Fatalf("❌ Failed to delete Container Instance: %v", err)
 		} else {
 			log.Printf("✅ Container Instance deleted: %s", tracker.ContainterInstance)
+		}
+	}
+	if tracker.ResourceGroup != "" {
+		log.Printf("Deleting Resource Group: %s...", tracker.ResourceGroup)
+		err := deleteResourceGroup(ctx, tracker.ResourceGroup)
+		if err != nil {
+			log.Fatalf("❌ Failed to delete Resource Group: %v", err)
+		} else {
+			log.Printf("✅ Resource Group deletion initiated: %s", tracker.ResourceGroup)
 		}
 	}
 }

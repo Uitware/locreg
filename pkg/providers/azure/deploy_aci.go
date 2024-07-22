@@ -14,6 +14,8 @@ import (
 // DeployACI handles the deployment of an Azure Container Instance
 func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string) {
 
+	checkTunnelURLValidity(tunnelURL)
+
 	tracker := &ResourceTracker{}
 
 	subscriptionID, err := getSubscriptionID()
@@ -54,16 +56,6 @@ func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 
 // createACI creates a new Azure Container Instance
 func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string) (*armcontainerinstance.ContainerGroup, error) {
-	log.Println("Creating Azure Container Instance...")
-	profilePath, err := parser.GetProfilePath()
-	if err != nil {
-		return nil, fmt.Errorf("❌ failed to get profile path: %w", err)
-	}
-
-	profile, err := parser.LoadOrCreateProfile(profilePath)
-	if err != nil {
-		return nil, fmt.Errorf("❌ failed to load or create profile: %w", err)
-	}
 	containerConfig := azureConfig.Deploy.Provider.Azure.ContainerInstance
 	imageConfig := azureConfig.Image
 	containerGroup := armcontainerinstance.ContainerGroup{
@@ -103,8 +95,8 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 			ImageRegistryCredentials: []*armcontainerinstance.ImageRegistryCredential{
 				{
 					Server:   to.Ptr(tunnelURL),
-					Username: to.Ptr(profile.LocalRegistry.Username),
-					Password: to.Ptr(profile.LocalRegistry.Password),
+					Username: to.Ptr(azureConfig.Registry.Username),
+					Password: to.Ptr(azureConfig.Registry.Password),
 				},
 			},
 		},

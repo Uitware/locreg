@@ -14,6 +14,9 @@ import (
 
 // DeployAppService handles the deployment of an Azure App Service
 func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL string) {
+
+	checkTunnelURLValidity(tunnelURL)
+
 	// Track created resources
 	tracker := &ResourceTracker{}
 	subscriptionID, err := getSubscriptionID()
@@ -101,16 +104,6 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
 	imageConfig := azureConfig.Image
 
-	profilePath, err := parser.GetProfilePath()
-	if err != nil {
-		return nil, fmt.Errorf("❌ failed to get profile path: %w", err)
-	}
-
-	profile, err := parser.LoadOrCreateProfile(profilePath)
-	if err != nil {
-		return nil, fmt.Errorf("❌ failed to load or create profile: %w", err)
-	}
-
 	// Set up app settings for the Docker container
 	appSettings := []*armappservice.NameValuePair{
 		{
@@ -119,11 +112,11 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 		},
 		{
 			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_USERNAME"),
-			Value: to.Ptr(profile.LocalRegistry.Username),
+			Value: to.Ptr(azureConfig.Registry.Username),
 		},
 		{
 			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_PASSWORD"),
-			Value: to.Ptr(profile.LocalRegistry.Password),
+			Value: to.Ptr(azureConfig.Registry.Password),
 		},
 	}
 

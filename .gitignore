@@ -3,8 +3,8 @@ locreg
 /locreg.yaml
 /locreg2.yaml
 !**/locreg.yaml
-!**/locreg2.yaml
 Dockerfile
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/goland,go,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=goland,go,visualstudiocode

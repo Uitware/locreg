@@ -66,6 +66,7 @@ type Config struct {
 			} `mapstructure:"azure"`
 		} `mapstructure:"provider"`
 	} `mapstructure:"deploy"`
+	Tags map[string]*string `mapstructure:"tags" `
 }
 
 func LoadConfig(filePath string) (*Config, error) {
@@ -79,6 +80,14 @@ func LoadConfig(filePath string) (*Config, error) {
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("❌ error unmarshaling config file: %v", err)
+	}
+
+	if config.Tags == nil {
+		// If it is, set it to a default value
+		defaultValue := "true"
+		config.Tags = map[string]*string{
+			"managed-by-locreg": &defaultValue,
+		}
 	}
 
 	return &config, nil

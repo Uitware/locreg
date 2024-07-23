@@ -33,3 +33,12 @@ deploy:
           requests:
             cpu: 1.0
             memory: 1.5
+
+# By default, loccreg test all resources as managed-by-locreg: true
+tags: # Tags for the cloud resources
+  managed-by-locreg: "true"  # Can be specified one tag
+# Or multiple tags as shown below
+#tags:
+#  locreg-version: "0.1.0"
+#  test: "test"
+

@@ -15,7 +15,10 @@ import (
 // DeployAppService handles the deployment of an Azure App Service
 func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL string) {
 
-	checkTunnelURLValidity(tunnelURL)
+	err := checkTunnelURLValidity(tunnelURL)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Track created resources
 	tracker := &ResourceTracker{}
@@ -57,7 +60,6 @@ func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL
 	}
 	tracker.WebApp = azureConfig.Deploy.Provider.Azure.AppService.Name
 	log.Println("✅ App service created:", *appService.ID)
-
 	// Write deployment information to the profile
 	err = writeProfileAppService(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)
 	if err != nil {
@@ -84,6 +86,7 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 			Properties: &armappservice.PlanProperties{
 				Reserved: to.Ptr(azureConfig.Deploy.Provider.Azure.AppServicePlan.PlanProperties.Reserved),
 			},
+			Tags: azureConfig.Tags,
 		},
 		nil,
 	)
@@ -136,6 +139,7 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 				},
 				HTTPSOnly: to.Ptr(true),
 			},
+			Tags: azureConfig.Tags,
 		},
 		nil,
 	)

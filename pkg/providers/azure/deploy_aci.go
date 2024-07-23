@@ -100,6 +100,7 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 				},
 			},
 		},
+		Tags: azureConfig.Tags,
 	}
 
 	pollerResp, err := aciClient.BeginCreateOrUpdate(ctx, azureConfig.Deploy.Provider.Azure.ResourceGroup, containerConfig.Name, containerGroup, nil)

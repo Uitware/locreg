@@ -101,6 +101,7 @@ func createResourceGroup(ctx context.Context, azureConfig *parser.Config) (*armr
 		azureConfig.Deploy.Provider.Azure.ResourceGroup,
 		armresources.ResourceGroup{
 			Location: to.Ptr(azureConfig.Deploy.Provider.Azure.Location),
+			Tags:     azureConfig.Tags,
 		},
 		nil)
 	if err != nil {

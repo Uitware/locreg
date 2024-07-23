@@ -189,7 +189,6 @@ func checkTunnelURLValidity(tunnelURL string) error {
 // cleanupResources deletes all created resources if deployment fails
 func cleanupResources(ctx context.Context, tracker *ResourceTracker) {
 	log.Println("Cleaning up resources...")
-	log.Println(tracker)
 	if tracker.WebApp != "" {
 		log.Printf("Deleting Web App: %s...", tracker.WebApp)
 		err := deleteWebApp(ctx, tracker.WebApp, tracker.ResourceGroup)

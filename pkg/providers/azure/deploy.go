@@ -39,10 +39,11 @@ type ResourceTracker struct {
 	ContainterInstance string
 }
 
+var tracker = &ResourceTracker{}
+
 // Deploy initiates the deployment of resources in Azure
 func Deploy(azureConfig *parser.Config) {
 	log.Println("Starting deployment...")
-
 	// Get the Azure subscription ID
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
@@ -70,8 +71,10 @@ func Deploy(azureConfig *parser.Config) {
 	resourceGroup, err := createResourceGroup(ctx, azureConfig)
 	if err != nil {
 		handleAzureError(err)
+	} else {
+		tracker.ResourceGroup = azureConfig.Deploy.Provider.Azure.ResourceGroup
+		log.Println("✅ Resource group created:", *resourceGroup.ID)
 	}
-	log.Println("✅ Resource group created:", *resourceGroup.ID)
 	// Fetch the tunnel URL from the profile
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
@@ -187,7 +190,6 @@ func checkTunnelURLValidity(tunnelURL string) error {
 // cleanupResources deletes all created resources if deployment fails
 func cleanupResources(ctx context.Context, tracker *ResourceTracker) {
 	log.Println("Cleaning up resources...")
-
 	if tracker.WebApp != "" {
 		log.Printf("Deleting Web App: %s...", tracker.WebApp)
 		err := deleteWebApp(ctx, tracker.WebApp, tracker.ResourceGroup)

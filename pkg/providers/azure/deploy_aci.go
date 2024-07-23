@@ -16,8 +16,6 @@ func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 
 	checkTunnelURLValidity(tunnelURL)
 
-	tracker := &ResourceTracker{}
-
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)
@@ -43,9 +41,10 @@ func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 	if err != nil {
 		cleanupResources(ctx, tracker)
 		handleAzureError(err)
+	} else {
+		tracker.ContainterInstance = azureConfig.Deploy.Provider.Azure.ContainerInstance.Name
+		log.Println("✅ Deployment completed successfully.", *containerInstance.Name)
 	}
-
-	log.Println("✅ Deployment completed successfully.", *containerInstance.ID)
 
 	err = writeProfileContainerInstance(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.ContainerInstance.Name)
 	if err != nil {

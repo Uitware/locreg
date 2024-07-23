@@ -20,8 +20,6 @@ func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL
 		log.Fatal(err)
 	}
 
-	// Track created resources
-	tracker := &ResourceTracker{}
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)
@@ -49,17 +47,19 @@ func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL
 	if err != nil {
 		cleanupResources(ctx, tracker)
 		handleAzureError(err)
+	} else {
+		tracker.AppServicePlan = azureConfig.Deploy.Provider.Azure.AppServicePlan.Name
+		log.Println("✅ App service plan created:", *appServicePlan.ID)
 	}
-	tracker.AppServicePlan = azureConfig.Deploy.Provider.Azure.AppServicePlan.Name
-	log.Println("✅ App service plan created:", *appServicePlan.ID)
 
 	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID, tunnelURL)
 	if err != nil {
 		cleanupResources(ctx, tracker)
 		handleAzureError(err)
+	} else {
+		tracker.WebApp = azureConfig.Deploy.Provider.Azure.AppService.Name
+		log.Println("✅ App service created:", *appService.ID)
 	}
-	tracker.WebApp = azureConfig.Deploy.Provider.Azure.AppService.Name
-	log.Println("✅ App service created:", *appService.ID)
 	// Write deployment information to the profile
 	err = writeProfileAppService(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)
 	if err != nil {

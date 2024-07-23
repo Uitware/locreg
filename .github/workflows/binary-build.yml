@@ -25,6 +25,8 @@ jobs:
     - name: Test
       env:
         NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN_FOR_CI_TESTS }}
+        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       run: go test -v ./...
 
   build:

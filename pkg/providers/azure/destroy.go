@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerinstance/armcontainerinstance/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"locreg/pkg/parser"
 	"log"
@@ -38,6 +39,12 @@ func Destroy() {
 	plansClient = appserviceClientFactory.NewPlansClient()
 	webAppsClient = appserviceClientFactory.NewWebAppsClient()
 
+	aciClientFactory, err = armcontainerinstance.NewClientFactory(subscriptionID, cred, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	aciClient = aciClientFactory.NewContainerGroupsClient()
+
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
 		log.Fatal(err)
@@ -61,6 +68,14 @@ func Destroy() {
 			handleAzureError(err)
 		} else {
 			log.Println("✅ App service plan deleted:", profile.CloudResources.AppServicePlanName)
+		}
+	}
+
+	if profile.CloudResources.ContainerInstanceName != "" {
+		if err := deleteContainerInstance(ctx, profile.CloudResources.ContainerInstanceName, profile.CloudResources.ResourceGroupName); err != nil {
+			handleAzureError(err)
+		} else {
+			log.Println("✅ Container instance deleted:", profile.CloudResources.ContainerInstanceName)
 		}
 	}
 
@@ -98,6 +113,19 @@ func deleteAppServicePlan(ctx context.Context, appServicePlanName, resourceGroup
 func deleteWebApp(ctx context.Context, appServiceName, resourceGroupName string) error {
 	log.Println("Deleting Web App...")
 	_, err := webAppsClient.Delete(ctx, resourceGroupName, appServiceName, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func deleteContainerInstance(ctx context.Context, containerInstanceName, resourceGroupName string) error {
+	log.Println("Deleting Container Instance...")
+	pollerResp, err := aciClient.BeginDelete(ctx, resourceGroupName, containerInstanceName, nil)
+	if err != nil {
+		return err
+	}
+	_, err = pollerResp.PollUntilDone(ctx, nil)
 	if err != nil {
 		return err
 	}

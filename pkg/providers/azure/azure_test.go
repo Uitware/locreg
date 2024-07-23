@@ -2,6 +2,7 @@ package azure
 
 import (
 	"context"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerinstance/armcontainerinstance/v2"
 	"log"
 	"math/rand"
 	"os"
@@ -25,7 +26,7 @@ func getProjectRoot() string {
 	return dir
 }
 func generateRandomString(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 	var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	b := make([]byte, length)
 	for i := range b {
@@ -37,8 +38,9 @@ func generateRandomString(length int) string {
 var ResourceGroup = "locreg-test-rg" + generateRandomString(5)
 var AppServicePlanName = "locreg-test-plan" + generateRandomString(5)
 var AppServiceName = "locreg-test-app" + generateRandomString(5)
+var ContainerInstanceName = "locregtestaci" + generateRandomString(5)
 
-func TestDeploy(t *testing.T) {
+func TestDeployAppService(t *testing.T) {
 	// Load test configuration
 	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "locreg.yaml"))
 	config.Deploy.Provider.Azure.ResourceGroup = ResourceGroup
@@ -110,17 +112,55 @@ func TestDeploy(t *testing.T) {
 			log.Println("Web App ID:", *appService.ID)
 		}
 	})
+
 }
 
-func TestCleanupResources(t *testing.T) {
-	// Load test configuration
-	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "locreg.yaml"))
-	config.Deploy.Provider.Azure.ResourceGroup = ResourceGroup
-	config.Deploy.Provider.Azure.AppServicePlan.Name = AppServicePlanName
-	config.Deploy.Provider.Azure.AppService.Name = AppServiceName
+func TestDeployContainerInstance(t *testing.T) {
+
+	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "locreg_aci.yaml"))
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
+	config.Deploy.Provider.Azure.ResourceGroup = ResourceGroup
+	config.Deploy.Provider.Azure.ContainerInstance.Name = ContainerInstanceName
+	config.Registry.Username = os.Getenv("REGISTRY_USERNAME")
+	config.Registry.Password = os.Getenv("REGISTRY_PASSWORD")
+
+	// Setup context
+	ctx := context.Background()
+
+	// Authenticate using Azure credentials
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		t.Fatalf("Failed to authenticate: %v", err)
+	}
+
+	// Initialize Azure resource clients
+	subscriptionID, err := getSubscriptionID()
+	if err != nil {
+		t.Fatalf("Failed to get subscription ID: %v", err)
+	}
+
+	aciClientFactory, err = armcontainerinstance.NewClientFactory(subscriptionID, cred, nil)
+	if err != nil {
+		t.Fatalf("Failed to create ACI client: %v", err)
+	}
+
+	resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
+	aciClient = aciClientFactory.NewContainerGroupsClient()
+
+	t.Run("DeployContainerInstance", func(t *testing.T) {
+		aci, err := createACI(ctx, config, "docker.io")
+		if err != nil {
+			t.Fatalf("Failed to create ACI: %v", err)
+		} else {
+			log.Println("ACI created:", *aci.ID)
+		}
+	})
+
+}
+
+func TestCleanupResources(t *testing.T) {
 
 	// Test cleanup function independently
 	ctx := context.Background()
@@ -146,15 +186,21 @@ func TestCleanupResources(t *testing.T) {
 		t.Fatalf("Failed to create appservice client factory: %v", err)
 	}
 
+	aciClientFactory, err = armcontainerinstance.NewClientFactory(subscriptionID, cred, nil)
+	if err != nil {
+		t.Fatalf("Failed to create ACI client: %v", err)
+	}
+
 	resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
 	plansClient = appserviceClientFactory.NewPlansClient()
 	webAppsClient = appserviceClientFactory.NewWebAppsClient()
+	aciClient = aciClientFactory.NewContainerGroupsClient()
 
 	tracker := &ResourceTracker{
-		ResourceGroup:  config.Deploy.Provider.Azure.ResourceGroup,
-		AppServicePlan: config.Deploy.Provider.Azure.AppServicePlan.Name,
-		WebApp:         config.Deploy.Provider.Azure.AppService.Name,
+		ResourceGroup:      ResourceGroup,
+		AppServicePlan:     AppServicePlanName,
+		WebApp:             AppServiceName,
+		ContainterInstance: ContainerInstanceName,
 	}
-
 	cleanupResources(ctx, tracker)
 }

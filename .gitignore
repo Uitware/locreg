@@ -1,7 +1,7 @@
 .idea/
 locreg
 /locreg.yaml
-/locreg2.yaml
+/locreg*.yaml
 !**/locreg.yaml
 Dockerfile
 

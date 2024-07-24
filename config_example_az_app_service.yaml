@@ -41,3 +41,5 @@ tags: # Tags for the cloud resources
 #  test: "test"
 
 # By default, loccreg test all resources as managed-by-locreg: true
+# If you want to disable tags which we do not recommend, you can set it to false like in example below
+#tags: false

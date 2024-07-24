@@ -26,7 +26,7 @@ func TestDefaultValuesForRegistry(t *testing.T) {
 		t.Errorf("Username is not assigned a default random value")
 	}
 	if config.Registry.Password == "" {
-		t.Errorf("Username is not assigned a default random value")
+		t.Errorf("Password is not assigned")
 	}
 }
 
@@ -54,7 +54,7 @@ func TestDefaultForOnlyOneValue(t *testing.T) {
 		t.Errorf("Username is not retrieved correctly")
 	}
 	if config.Registry.Password == "" {
-		t.Errorf("Username is not assigned a default random value")
+		t.Errorf("Password is assigned")
 	}
 
 	// For password also
@@ -67,6 +67,6 @@ func TestDefaultForOnlyOneValue(t *testing.T) {
 		t.Errorf("Username is not retrieved correctly")
 	}
 	if config.Registry.Password != "test_password" {
-		t.Errorf("Username is not assigned a default random value")
+		t.Errorf("Password is not retrieved")
 	}
 }

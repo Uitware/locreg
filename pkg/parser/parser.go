@@ -78,6 +78,11 @@ func LoadConfig(filePath string) (*Config, error) {
 		return nil, fmt.Errorf("❌ error reading config file: %v", err)
 	}
 
+	tags := viper.Get("tags")
+	if tags == false {
+		viper.Set("tags", map[string]*string{})
+	}
+
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("❌ error unmarshaling config file: %v", err)

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -20,12 +21,9 @@ func updateConfig(
 ) error {
 	// Prepare credentials
 	// Password configuration for registry should be hashed using bcrypt
-	credsTarBuffer, err := prepareCreds(username, password)
-	if err != nil {
-		return fmt.Errorf("❌ failed to prepare credentials: %w", err)
-	}
+	credsTarBuffer := prepareCreds(username, password)
 	// Write password file to container
-	err = dockerClient.CopyToContainer(
+	err := dockerClient.CopyToContainer(
 		ctx,
 		containerID,
 		"/",
@@ -96,7 +94,7 @@ func RotateCreds(
 	ctx context.Context,
 	username, password, containerName string,
 ) error {
-	credsTarBuffer, err := prepareCreds(username, password)
+	credsTarBuffer := prepareCreds(username, password)
 	// lookup container id from it's name
 	containers, err := dockerClient.ContainerList(ctx,
 		container.ListOptions{
@@ -128,21 +126,19 @@ func RotateCreds(
 	return nil
 }
 
-func prepareCreds(username, password string) (*bytes.Buffer, error) {
+func prepareCreds(username, password string) *bytes.Buffer {
 	// Prepare credentials
 	// Password configuration for registry should be hashed using bcrypt
-	if username != "" || password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, fmt.Errorf("❌ failed to hash password: %w", err)
-		}
-		credsTarBuffer, err := prepareTar(
-			fmt.Sprintf("%s:%s\n", username, hashedPassword),
-			"htpasswd",
-		)
-		return credsTarBuffer, nil
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatal("❌ failed to hash password: %w", err)
 	}
-	return nil, fmt.Errorf("❌ no password or username provided")
+	credsTarBuffer, err := prepareTar(
+		fmt.Sprintf("%s:%s\n", username, hashedPassword),
+		"htpasswd",
+	)
+	return credsTarBuffer
+
 }
 
 // prepareTar creates a tar archive with the htpasswd file data inside it stored in same way as htpasswd -Bnb command does

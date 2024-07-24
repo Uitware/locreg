@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"github.com/spf13/viper"
 )
@@ -76,11 +78,13 @@ func LoadConfig(filePath string) (*Config, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("❌ error reading config file: %v", err)
 	}
-
 	tags := viper.Get("tags")
 	if tags == false {
 		viper.Set("tags", map[string]*string{})
 	}
+
+	viper.SetDefault("registry.username", generateRandomString(36))
+	viper.SetDefault("registry.password", generateRandomString(36))
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
@@ -96,4 +100,12 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+func generateRandomString(length int) string {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		panic(err)
+	}
+	return hex.EncodeToString(bytes)
 }

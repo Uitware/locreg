@@ -90,9 +90,9 @@ func LoadConfig(filePath string) (*Config, error) {
 
 	if config.Tags == nil || config.Tags["managed-by-locreg"] == to.Ptr("false") {
 		// If it is, set it to a default value
-		defaultValue := "true"
+		defaultValue := "locreg"
 		config.Tags = map[string]*string{
-			"managed-by-locreg": &defaultValue,
+			"managed-by": &defaultValue,
 		}
 	}
 

@@ -34,7 +34,7 @@ deploy:
           alwaysOn: true # App service always on
 
 tags: # Tags for the cloud resources
-  managed-by-locreg: "true"  # Can be specified one
+  managed-by: "locreg"  # Can be specified one
 # Or multiple tags
 #tags:
 #  locreg-version: "0.1.0"

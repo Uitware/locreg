@@ -32,3 +32,14 @@ deploy:
         name: "myAppService" # App service name
         siteConfig:
           alwaysOn: true # App service always on
+
+tags: # Tags for the cloud resources
+  managed-by: "locreg"  # Can be specified one
+# Or multiple tags
+#tags:
+#  locreg-version: "0.1.0"
+#  test: "test"
+
+# By default, loccreg test all resources as managed-by: locreg
+# If you want to disable tags which we do not recommend, you can set it to false like in example below
+#tags: false

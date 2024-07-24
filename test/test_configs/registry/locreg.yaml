@@ -24,7 +24,6 @@ deploy:
         sku:
           name: "S1" # App service plan SKU
           capacity: 1 # App service plan capacity
-          tier: "STANDARD" # App service plan tier
         planProperties:
           reserved: true # App service plan reserved
       appService:

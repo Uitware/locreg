@@ -33,7 +33,6 @@ type Config struct {
 					Sku  struct {
 						Name     string `mapstructure:"name"`
 						Capacity int    `mapstructure:"capacity"`
-						Tier     string `mapstructure:"tier"`
 					} `mapstructure:"sku"`
 					PlanProperties struct {
 						Reserved bool `mapstructure:"reserved"`

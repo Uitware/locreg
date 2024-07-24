@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/spf13/viper"
 )
 
@@ -88,7 +87,7 @@ func LoadConfig(filePath string) (*Config, error) {
 		return nil, fmt.Errorf("❌ error unmarshaling config file: %v", err)
 	}
 
-	if config.Tags == nil || config.Tags["managed-by-locreg"] == to.Ptr("false") {
+	if config.Tags == nil {
 		// If it is, set it to a default value
 		defaultValue := "locreg"
 		config.Tags = map[string]*string{

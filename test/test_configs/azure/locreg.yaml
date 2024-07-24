@@ -25,7 +25,6 @@ deploy:
         sku:
           name: "B1"
           capacity: 1
-          tier: "BASIC"
         planProperties:
           reserved: true
       appService:

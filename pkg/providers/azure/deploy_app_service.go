@@ -81,7 +81,6 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 			SKU: &armappservice.SKUDescription{
 				Name:     to.Ptr(sku.Name),
 				Capacity: to.Ptr[int32](int32(sku.Capacity)),
-				Tier:     to.Ptr(sku.Tier),
 			},
 			Properties: &armappservice.PlanProperties{
 				Reserved: to.Ptr(azureConfig.Deploy.Provider.Azure.AppServicePlan.PlanProperties.Reserved),

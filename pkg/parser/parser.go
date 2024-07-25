@@ -48,20 +48,20 @@ type Config struct {
 					} `mapstructure:"siteConfig"`
 				} `mapstructure:"appService"`
 				ContainerInstance struct {
-					Name          string `mapstructure:"name"`
-					OsType        string `mapstructure:"osType"`
-					RestartPolicy string `mapstructure:"restartPolicy"`
+					Name          string `mapstructure:"name" default:"locreg-container"`
+					OsType        string `mapstructure:"osType" default:"Linux"`
+					RestartPolicy string `mapstructure:"restartPolicy" default:"Always"`
 					IpAddress     struct {
-						Type  string `mapstructure:"type"`
+						Type  string `mapstructure:"type" default:"Public"`
 						Ports []struct {
-							Port     int    `mapstructure:"port"`
-							Protocol string `mapstructure:"protocol"`
+							Port     int    `mapstructure:"port" default:"80""`
+							Protocol string `mapstructure:"protocol" default:"TCP"`
 						} `mapstructure:"ports"`
 					} `mapstructure:"ipAddress"`
 					Resources struct {
 						Requests struct {
-							Cpu    float64 `mapstructure:"cpu"`
-							Memory float64 `mapstructure:"memory"`
+							Cpu    float64 `mapstructure:"cpu" default:"0.5"`
+							Memory float64 `mapstructure:"memory" default:"1.5"`
 						} `mapstructure:"requests"`
 					} `mapstructure:"resources"`
 				} `mapstructure:"containerInstance"`

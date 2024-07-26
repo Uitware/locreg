@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/spf13/viper"
-	"log"
 	"os/exec"
 	"reflect"
 	"strings"
@@ -97,7 +96,6 @@ func LoadConfig(filePath string) (*Config, error) {
 			"managed-by": &defaultValue,
 		}
 	}
-	log.Print(config)
 	return &config, nil
 }
 
@@ -141,7 +139,6 @@ func setDynamicDefaults() {
 func getGitSHA() string {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	output, err := cmd.Output()
-	log.Println(err)
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			if exitError.ExitCode() == 128 {
@@ -150,7 +147,6 @@ func getGitSHA() string {
 		}
 		return "latest"
 	}
-	log.Println(string(output))
 	return strings.TrimSpace(string(output))
 }
 

@@ -5,7 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/spf13/viper"
+	"log"
+	"os/exec"
 	"reflect"
+	"strings"
 )
 
 type Config struct {
@@ -18,8 +21,8 @@ type Config struct {
 		Password string `mapstructure:"password"` // Set separately as should be unique each time
 	} `mapstructure:"registry"`
 	Image struct {
-		Name string `mapstructure:"name" default:"app-image"`
-		Tag  string `mapstructure:"tag" default:"latest"`
+		Name string `mapstructure:"name" default:"locreg-builded-image"`
+		Tag  string `mapstructure:"tag"` // Set a git SHA if not peresent default to latest
 	} `mapstructure:"image"`
 	Tunnel struct {
 		Provider struct {
@@ -94,7 +97,7 @@ func LoadConfig(filePath string) (*Config, error) {
 			"managed-by": &defaultValue,
 		}
 	}
-
+	log.Print(config)
 	return &config, nil
 }
 
@@ -132,6 +135,23 @@ func setDynamicDefaults() {
 	viper.SetDefault("registry.username", generateRandomString(36))
 	viper.SetDefault("registry.password", generateRandomString(36))
 	viper.SetDefault("deploy.provider.azure.appService.name", fmt.Sprintf("locregappservice%s", generateRandomString(8)))
+	viper.SetDefault("image.tag", getGitSHA())
+}
+
+func getGitSHA() string {
+	cmd := exec.Command("git", "rev-parse", "HEAD")
+	output, err := cmd.Output()
+	log.Println(err)
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			if exitError.ExitCode() == 128 {
+				return "latest"
+			}
+		}
+		return "latest"
+	}
+	log.Println(string(output))
+	return strings.TrimSpace(string(output))
 }
 
 func generateRandomString(length int) string {

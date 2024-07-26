@@ -89,7 +89,7 @@ func Deploy(azureConfig *parser.Config) {
 	// Determine the deployment type and call the appropriate deployment function
 	if azureConfig.Deploy.Provider.Azure.AppServicePlan.Name != "" {
 		DeployAppService(ctx, azureConfig, tunnelURL)
-	} else if "azureConfig.Deploy.Provider.Azure.ContainerInstance.Name" != "" {
+	} else if azureConfig.Deploy.Provider.Azure.ContainerInstance.Name != "" {
 		DeployACI(ctx, azureConfig, tunnelURL)
 	} else {
 		log.Fatal("❌ No valid deployment configuration found.")

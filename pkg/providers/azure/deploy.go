@@ -42,7 +42,7 @@ type ResourceTracker struct {
 var tracker = &ResourceTracker{}
 
 // Deploy initiates the deployment of resources in Azure
-func Deploy(azureConfig *parser.Config) {
+func Deploy(azureConfig *parser.Config, envVars map[string]string) {
 	log.Println("Starting deployment...")
 	// Get the Azure subscription ID
 	subscriptionID, err := getSubscriptionID()
@@ -88,7 +88,7 @@ func Deploy(azureConfig *parser.Config) {
 	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
 	// Determine the deployment type and call the appropriate deployment function
 	if azureConfig.Deploy.Provider.Azure.AppServicePlan.Name != "" {
-		DeployAppService(ctx, azureConfig, tunnelURL)
+		DeployAppService(ctx, azureConfig, tunnelURL, envVars)
 	} else if azureConfig.Deploy.Provider.Azure.ContainerInstance.Name != "" {
 		DeployACI(ctx, azureConfig, tunnelURL)
 	} else {

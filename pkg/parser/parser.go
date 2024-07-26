@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"os/exec"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -25,7 +26,13 @@ type Config struct {
 	} `mapstructure:"image"`
 	Tunnel struct {
 		Provider struct {
-			Ngrok struct{} `mapstructure:"ngrok"`
+			Ngrok struct {
+				Name        string `mapstructure:"name" default:"locreg-ngrok"`
+				Image       string `mapstructure:"image" default:"ngrok/ngrok"`
+				Tag         string `mapstructure:"tag" default:"latest"`
+				Port        int    `mapstructure:"port" default:"4040"`
+				NetworkName string `mapstructure:"networkName" default:"locreg-ngrok"`
+			} `mapstructure:"ngrok"`
 		} `mapstructure:"provider"`
 	} `mapstructure:"tunnel"`
 	Deploy struct {
@@ -56,7 +63,7 @@ type Config struct {
 					IpAddress     struct {
 						Type  string `mapstructure:"type" default:"Public"`
 						Ports []struct {
-							Port     int    `mapstructure:"port" default:"80""`
+							Port     int    `mapstructure:"port" default:"80"`
 							Protocol string `mapstructure:"protocol" default:"TCP"`
 						} `mapstructure:"ports"`
 					} `mapstructure:"ipAddress"`
@@ -119,7 +126,16 @@ func setStructDefaults(config interface{}, parentKey string) {
 		}
 
 		if defaultValue, ok := structField.Tag.Lookup("default"); ok {
-			viper.SetDefault(key, defaultValue)
+			if reflect.TypeOf(field.Interface()).Kind() == reflect.String {
+				viper.SetDefault(key, defaultValue)
+			}
+			if reflect.TypeOf(field.Interface()).Kind() == reflect.Int {
+				if v, err := strconv.Atoi(defaultValue); err == nil {
+					viper.SetDefault(key, v)
+				} else {
+					panic(err)
+				}
+			}
 		}
 	}
 }
@@ -156,4 +172,19 @@ func generateRandomString(length int) string {
 		panic(err)
 	}
 	return hex.EncodeToString(bytes)
+}
+
+func (config *Config) IsNgrokConfigured() bool {
+	ngrokConfig := config.Tunnel.Provider.Ngrok
+	v := reflect.ValueOf(ngrokConfig)
+	typeOfS := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		if reflect.DeepEqual(field.Interface(), reflect.Zero(field.Type()).Interface()) {
+			fmt.Printf("Field %s is not set\n", typeOfS.Field(i).Name)
+			return false
+		}
+	}
+	return true
 }

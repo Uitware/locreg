@@ -55,37 +55,46 @@ func Destroy() {
 		log.Fatal(err)
 	}
 
-	if profile.CloudResources.AppServiceName != "" {
-		if err := deleteWebApp(ctx, profile.CloudResources.AppServiceName, profile.CloudResources.ResourceGroupName); err != nil {
+	if profile.CloudResource.AppService.AppServiceName != "" {
+		if err := deleteWebApp(ctx, profile.CloudResource.AppService.AppServiceName, profile.CloudResource.AppService.ResourceGroupName); err != nil {
 			handleAzureError(err)
 		} else {
-			log.Println("✅ App service deleted:", profile.CloudResources.AppServiceName)
+			log.Println("✅ App service deleted:", profile.CloudResource.AppService.AppServiceName)
 		}
 	}
 
-	if profile.CloudResources.AppServicePlanName != "" {
-		if err := deleteAppServicePlan(ctx, profile.CloudResources.AppServicePlanName, profile.CloudResources.ResourceGroupName); err != nil {
+	if profile.CloudResource.AppService.AppServicePlanName != "" {
+		if err := deleteAppServicePlan(ctx, profile.CloudResource.AppService.AppServicePlanName, profile.CloudResource.AppService.ResourceGroupName); err != nil {
 			handleAzureError(err)
 		} else {
-			log.Println("✅ App service plan deleted:", profile.CloudResources.AppServicePlanName)
+			log.Println("✅ App service plan deleted:", profile.CloudResource.AppService.AppServicePlanName)
 		}
 	}
 
-	if profile.CloudResources.ContainerInstanceName != "" {
-		if err := deleteContainerInstance(ctx, profile.CloudResources.ContainerInstanceName, profile.CloudResources.ResourceGroupName); err != nil {
+	if profile.CloudResource.ContainerInstance.ContainerInstanceName != "" {
+		if err := deleteContainerInstance(ctx, profile.CloudResource.ContainerInstance.ContainerInstanceName, profile.CloudResource.ContainerInstance.ResourceGroupName); err != nil {
 			handleAzureError(err)
 		} else {
-			log.Println("✅ Container instance deleted:", profile.CloudResources.ContainerInstanceName)
+			log.Println("✅ Container instance deleted:", profile.CloudResource.ContainerInstance.ContainerInstanceName)
 		}
 	}
 
-	if profile.CloudResources.ResourceGroupName != "" {
-		if err := deleteResourceGroup(ctx, profile.CloudResources.ResourceGroupName); err != nil {
+	if profile.CloudResource.AppService.ResourceGroupName != "" {
+		if err := deleteResourceGroup(ctx, profile.CloudResource.AppService.ResourceGroupName); err != nil {
 			handleAzureError(err)
 		} else {
-			log.Println("✅ Resource group deleted:", profile.CloudResources.ResourceGroupName)
+			log.Println("✅ Resource group deleted:", profile.CloudResource.AppService.ResourceGroupName)
 		}
 	}
+
+	if profile.CloudResource.ContainerInstance.ResourceGroupName != "" {
+		if err := deleteResourceGroup(ctx, profile.CloudResource.ContainerInstance.ResourceGroupName); err != nil {
+			handleAzureError(err)
+		} else {
+			log.Println("✅ Resource group deleted:", profile.CloudResource.ContainerInstance.ResourceGroupName)
+		}
+	}
+
 }
 
 func deleteResourceGroup(ctx context.Context, resourceGroupName string) error {

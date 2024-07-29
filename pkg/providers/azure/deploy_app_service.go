@@ -165,15 +165,14 @@ func writeProfileAppService(resourceGroupName, appServicePlanName, appServiceNam
 	}
 
 	// Update the profile with the new resource details
-	profile.CloudResources.ResourceGroupName = resourceGroupName
-	profile.CloudResources.AppServicePlanName = appServicePlanName
-	profile.CloudResources.AppServiceName = appServiceName
-
-	// Save the updated profile
-	err = parser.SaveProfile(profile, profilePath)
-	if err != nil {
-		return fmt.Errorf("❌ failed to save profile: %w", err)
+	profile.CloudResource.AppService = &parser.AppService{
+		ResourceGroupName:  resourceGroupName,
+		AppServicePlanName: appServicePlanName,
+		AppServiceName:     appServiceName,
 	}
 
+	if err := parser.SaveProfile(profile, profilePath); err != nil {
+		return fmt.Errorf("❌ failed to save profile: %w", err)
+	}
 	return nil
 }

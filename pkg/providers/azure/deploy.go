@@ -75,7 +75,7 @@ func Deploy(azureConfig *parser.Config) {
 		tracker.ResourceGroup = azureConfig.Deploy.Provider.Azure.ResourceGroup
 		log.Println("✅ Resource group created:", *resourceGroup.ID)
 	}
-	// Fetch the tunnel URL from the profile
+	//Fetch the tunnel URL from the profile
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
 		log.Fatalf("❌ Failed to get profile path: %v", err)
@@ -86,10 +86,11 @@ func Deploy(azureConfig *parser.Config) {
 		log.Fatalf("❌ Failed to load or create profile: %v", err)
 	}
 	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
-	// Determine the deployment type and call the appropriate deployment function
-	if azureConfig.Deploy.Provider.Azure.AppServicePlan.Name != "" {
+
+	//Determine the deployment type and call the appropriate deployment function
+	if azureConfig.IsAppServiceSet() {
 		DeployAppService(ctx, azureConfig, tunnelURL)
-	} else if azureConfig.Deploy.Provider.Azure.ContainerInstance.Name != "" {
+	} else if azureConfig.IsContainerInstanceSet() {
 		DeployACI(ctx, azureConfig, tunnelURL)
 	} else {
 		log.Fatal("❌ No valid deployment configuration found.")

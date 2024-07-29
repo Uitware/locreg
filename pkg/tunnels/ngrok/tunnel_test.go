@@ -80,7 +80,7 @@ func createTunnel(t *testing.T) {
 				context.Background(),
 				container.ListOptions{
 					Filters: filters.NewArgs(
-						filters.Arg("name", "locreg-ngrok"),
+						filters.Arg("name", config.Tunnel.Provider.Ngrok.Name),
 					),
 				})
 			if err != nil {

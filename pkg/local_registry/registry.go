@@ -18,10 +18,9 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 	// Use configuration values
 	registryPort := fmt.Sprintf("%d", config.Registry.Port)
 	imageVersion := fmt.Sprintf("docker.io/%s:%s", config.Registry.Image, config.Registry.Tag)
-	containerPort := "5000"
 
 	// Create specifically formatted string for port mapping
-	port, err := nat.NewPort("tcp", containerPort)
+	port, err := nat.NewPort("tcp", "5000")
 	if err != nil {
 		return fmt.Errorf("❌ failed to run on port: %w", err)
 	}
@@ -52,7 +51,7 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 		},
 		&network.NetworkingConfig{
 			EndpointsConfig: map[string]*network.EndpointSettings{
-				getNetworkId(dockerClient): {}, // connect container to ngrok network os it can be tunneled
+				getNetworkId(dockerClient, config.Tunnel.Provider.Ngrok.NetworkName): {}, // connect container to ngrok network os it can be tunneled
 			},
 		},
 		nil,
@@ -123,18 +122,18 @@ func RotateCommand(configFilePath string) error {
 	return RotateCreds(cli, ctx, config.Registry.Username, config.Registry.Password, config.Registry.Name)
 }
 
-func getNetworkId(dockerClient *client.Client) string {
+func getNetworkId(dockerClient *client.Client, networkName string) string {
 	// retrieve network ID that was created for ngrok tunnel if it exists
 	resp, err := dockerClient.NetworkList(
 		context.Background(),
 		network.ListOptions{
-			Filters: filters.NewArgs(filters.Arg("name", "locreg-ngrok")),
+			Filters: filters.NewArgs(filters.Arg("name", networkName)),
 		})
 	if err != nil {
 		log.Fatalf("❌ failed to list networks: %v", err)
 	}
 	if len(resp) == 0 {
-		netResp, err := dockerClient.NetworkCreate(context.Background(), "locreg-ngrok", network.CreateOptions{})
+		netResp, err := dockerClient.NetworkCreate(context.Background(), networkName, network.CreateOptions{})
 		if err != nil {
 			log.Fatalf("❌ failed to create network: %v", err)
 		}

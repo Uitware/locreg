@@ -18,7 +18,7 @@ var tunnelCmd = &cobra.Command{
 			fmt.Println(fmt.Errorf("❌ failed to load config: %w", err))
 			return
 		}
-		if config.Tunnel.Provider.Ngrok != (struct{}{}) {
+		if !config.IsNgrokConfigured() {
 			fmt.Println("❌ Please specify 'ngrok' in the config file. Or if you want to use another provider, " +
 				"please wait for the next release or contribute by yourself")
 			return

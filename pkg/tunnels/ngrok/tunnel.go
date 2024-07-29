@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -33,9 +34,8 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 		return
 	}
 	ctx := context.Background()
-	containerImage := "ngrok/ngrok:latest"
-	containerPort := "4040"
-	port, err := nat.NewPort("tcp", containerPort)
+	containerImage := fmt.Sprintf("%v:%v", config.Tunnel.Provider.Ngrok.Image, config.Tunnel.Provider.Ngrok.Tag)
+	port, err := nat.NewPort("tcp", "4040")
 	if err != nil {
 		log.Fatalf("❌ failed to run on port: %v", err)
 	}
@@ -48,15 +48,18 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 		port: []nat.PortBinding{
 			{
 				HostIP:   "0.0.0.0",
-				HostPort: containerPort,
+				HostPort: strconv.Itoa(config.Tunnel.Provider.Ngrok.Port),
 			},
 		},
 	}
 
-	networkId := getNetworkId(dockerClient)
-
+	networkId := getNetworkId(dockerClient, config.Tunnel.Provider.Ngrok.NetworkName)
 	if networkId == "" {
-		netResp, err := dockerClient.NetworkCreate(context.Background(), "locreg-ngrok", network.CreateOptions{})
+		netResp, err := dockerClient.NetworkCreate(
+			context.Background(),
+			config.Tunnel.Provider.Ngrok.NetworkName,
+			network.CreateOptions{},
+		)
 		if err != nil {
 			log.Fatalf("❌ failed to create network: %v", err)
 		}
@@ -75,7 +78,11 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 		ctx,
 		&container.Config{
 			Image: containerImage,
-			Cmd:   []string{"http", fmt.Sprintf("%v:%v", config.Registry.Name, "5000")},
+			Cmd: []string{
+				"http",
+				// Forward traffic to registry on registry port
+				fmt.Sprintf("%v:%v", config.Registry.Name, strconv.Itoa(config.Registry.Port)),
+			},
 			Env: []string{
 				"NGROK_AUTHTOKEN=" + os.Getenv("NGROK_AUTHTOKEN"),
 			},
@@ -92,24 +99,24 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 			},
 		},
 		nil,
-		"locreg-ngrok",
+		config.Tunnel.Provider.Ngrok.Name,
 	)
 	if err != nil {
 		log.Fatalf("❌ failed to create container: %v", err)
 	}
-	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
-	if err != nil {
+
+	if err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		defer errorCleanup(resp.ID, err)
 		log.Printf("❌ failed to start ngrok container: %v", err)
 	}
-	if err = writeToProfile(resp.ID); err != nil {
+	if err = writeToProfile(resp.ID, strconv.Itoa(config.Tunnel.Provider.Ngrok.Port)); err != nil {
 		defer errorCleanup(resp.ID, err)
 		log.Fatalf("❌ failed to write to profile: %v", err)
 	}
 }
 
 // writeToProfile writes the container ID and credentials to the profile file in TOML format
-func writeToProfile(dockerId string) error {
+func writeToProfile(dockerId string, port string) error {
 	var tunnelsResponse Tunnels
 	var resp *http.Response
 	profilePath, err := parser.GetProfilePath()
@@ -120,9 +127,9 @@ func writeToProfile(dockerId string) error {
 	if err != nil {
 		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
-	// Get tunnel URL from ngrok container  API
+	// Get tunnel URL from ngrok container API
 	for i := 0; i < 5; i++ {
-		resp, err = http.Get("http://127.0.0.1:4040/api/tunnels")
+		resp, err = http.Get(fmt.Sprintf("http://127.0.0.1:%s/api/tunnels", port))
 		if err != nil {
 			time.Sleep(time.Duration(i) * time.Second) // Wait for 5 seconds before retrying
 			continue
@@ -144,11 +151,11 @@ func writeToProfile(dockerId string) error {
 	return nil
 }
 
-func getNetworkId(dockerClient *client.Client) string {
+func getNetworkId(dockerClient *client.Client, networkName string) string {
 	resp, err := dockerClient.NetworkList(
 		context.Background(),
 		network.ListOptions{
-			Filters: filters.NewArgs(filters.Arg("name", "locreg-ngrok")),
+			Filters: filters.NewArgs(filters.Arg("name", networkName)),
 		})
 	if err != nil {
 		log.Fatalf("❌ failed to list networks: %v", err)

@@ -15,11 +15,6 @@ import (
 // DeployAppService handles the deployment of an Azure App Service
 func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL string, envVars map[string]string) {
 
-	err := checkTunnelURLValidity(tunnelURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)

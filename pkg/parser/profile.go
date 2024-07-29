@@ -61,6 +61,8 @@ func LoadOrCreateProfile(profilePath string) (*Profile, error) {
 		if err := toml.Unmarshal(data, &profile); err != nil {
 			return nil, fmt.Errorf("❌ failed to unmarshal profile file: %w", err)
 		}
+	} else if os.IsNotExist(err) {
+		profile = Profile{}
 	} else {
 		return nil, fmt.Errorf("❌ failed to check profile file: %w", err)
 	}

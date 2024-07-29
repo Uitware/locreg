@@ -164,6 +164,9 @@ func writeProfileAppService(resourceGroupName, appServicePlanName, appServiceNam
 		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
+	if profile.CloudResource == nil {
+		profile.CloudResource = &parser.CloudResource{}
+	}
 	// Update the profile with the new resource details
 	profile.CloudResource.AppService = &parser.AppService{
 		ResourceGroupName:  resourceGroupName,

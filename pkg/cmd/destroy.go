@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"locreg/pkg/local_registry"
+	"locreg/pkg/parser"
+	"locreg/pkg/providers/azure"
 	"log"
 	"os"
 
-	"locreg/pkg/local_registry"
-	"locreg/pkg/providers/azure"
 	"locreg/pkg/tunnels/ngrok"
 
 	"github.com/spf13/cobra"
@@ -27,12 +28,30 @@ var destroyCmd = &cobra.Command{
 
 func destroyAllResources() error {
 
-	local_registry.DestroyLocalRegistry()
-	ngrok.DestroyTunnel()
-	azure.Destroy()
+	profilePath, err := parser.GetProfilePath()
+	if err != nil {
+		return fmt.Errorf("❌ failed to get profile path: %w", err)
+	}
 
-	profilePath := os.ExpandEnv("$HOME/.locreg")
-	err := os.Remove(profilePath)
+	profile, err := parser.LoadOrCreateProfile(profilePath)
+	if err != nil {
+		return fmt.Errorf("❌ failed to load or create profile: %w", err)
+	}
+
+	if profile.LocalRegistry != nil {
+		local_registry.DestroyLocalRegistry()
+		profile.LocalRegistry = nil
+	}
+	if profile.Tunnel != nil {
+		ngrok.DestroyTunnel()
+		profile.Tunnel = nil
+	}
+	if profile.CloudResource != nil {
+		azure.Destroy()
+		profile.CloudResource = nil
+	}
+
+	err = os.Remove(profilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println("❌ There are no resources created yet.")

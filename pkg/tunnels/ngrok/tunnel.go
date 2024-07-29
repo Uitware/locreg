@@ -81,7 +81,7 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 			Cmd: []string{
 				"http",
 				// Forward traffic to registry on registry port
-				fmt.Sprintf("%v:%v", config.Registry.Name, strconv.Itoa(config.Registry.Port)),
+				fmt.Sprintf("%v:%v", config.Registry.Name, "5000"),
 			},
 			Env: []string{
 				"NGROK_AUTHTOKEN=" + os.Getenv("NGROK_AUTHTOKEN"),

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/spf13/viper"
-	"log"
 	"os/exec"
 	"reflect"
 	"strconv"
@@ -88,8 +87,6 @@ func LoadConfig(filePath string) (*Config, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("❌ error reading config file: %v", err)
 	}
-	log.Print(viper.InConfig("deploy.provider.azure"))
-	log.Print(viper.AllKeys()) // Use this keys to determine which default wars should be set
 
 	setDynamicDefaults()
 	setStructDefaults(&Config{}, "") // Set default values based on `default` tag in struct fields
@@ -106,7 +103,6 @@ func LoadConfig(filePath string) (*Config, error) {
 			"managed-by": &defaultValue,
 		}
 	}
-	log.Print(config)
 	return &config, nil
 }
 
@@ -132,7 +128,6 @@ func setStructDefaults(config interface{}, parentKey string) {
 			if defaultValue, ok := structField.Tag.Lookup("default"); ok {
 				switch field.Kind() {
 				case reflect.String:
-					log.Print(key, " ", defaultValue)
 					viper.SetDefault(key, defaultValue)
 				case reflect.Int:
 					if v, err := strconv.Atoi(defaultValue); err == nil {
@@ -231,17 +226,14 @@ func (config *Config) IsContainerInstanceSet() bool {
 }
 
 func isInConfig(key string) bool {
-	log.Print(key)
 	if len(strings.Split(key, ".")) >= 5 {
 		return true
 	}
 	for _, k := range viper.AllKeys() {
 		if strings.Contains(k, strings.ToLower(key)) {
-			log.Print(k, " ", key)
 			return true
 		}
 	}
-	log.Print("Key not found: ", key)
 	viper.SetDefault(key, nil)
 	return false
 }

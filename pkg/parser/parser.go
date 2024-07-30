@@ -61,15 +61,15 @@ type Config struct {
 					OsType        string `mapstructure:"osType" default:"Linux"`
 					RestartPolicy string `mapstructure:"restartPolicy" default:"Always"`
 					IpAddress     struct {
-						Type  string `mapstructure:"type" default:"Public"`
-						Ports []struct {
-							Port     int    `mapstructure:"port" default:"80"`
-							Protocol string `mapstructure:"protocol" default:"TCP"`
+						Type  string     `mapstructure:"type" default:"Public"`
+						Ports []struct { // should be set to default dynamically because it is a slice of structs
+							Port     int    `mapstructure:"port"`
+							Protocol string `mapstructure:"protocol"`
 						} `mapstructure:"ports"`
 					} `mapstructure:"ipAddress"`
 					Resources struct {
 						Requests struct {
-							Cpu    float64 `mapstructure:"cpu" default:"0.5"`
+							Cpu    float64 `mapstructure:"cpu" default:"1.0"`
 							Memory float64 `mapstructure:"memory" default:"1.5"`
 						} `mapstructure:"requests"`
 					} `mapstructure:"resources"`
@@ -111,7 +111,6 @@ func LoadConfig(filePath string) (*Config, error) {
 func setStructDefaults(config interface{}, parentKey string) {
 	v := reflect.ValueOf(config).Elem()
 	t := v.Type()
-
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		structField := t.Field(i)
@@ -122,18 +121,32 @@ func setStructDefaults(config interface{}, parentKey string) {
 		}
 
 		if field.Kind() == reflect.Struct {
-			setStructDefaults(field.Addr().Interface(), key)
-		}
-
-		if defaultValue, ok := structField.Tag.Lookup("default"); ok {
-			if reflect.TypeOf(field.Interface()).Kind() == reflect.String {
-				viper.SetDefault(key, defaultValue)
+			if isInConfig(key) {
+				setStructDefaults(field.Addr().Interface(), key)
 			}
-			if reflect.TypeOf(field.Interface()).Kind() == reflect.Int {
-				if v, err := strconv.Atoi(defaultValue); err == nil {
-					viper.SetDefault(key, v)
-				} else {
-					panic(err)
+		} else {
+			if defaultValue, ok := structField.Tag.Lookup("default"); ok {
+				switch field.Kind() {
+				case reflect.String:
+					viper.SetDefault(key, defaultValue)
+				case reflect.Int:
+					if v, err := strconv.Atoi(defaultValue); err == nil {
+						viper.SetDefault(key, v)
+					} else {
+						panic(err)
+					}
+				case reflect.Float64:
+					if v, err := strconv.ParseFloat(defaultValue, 64); err == nil {
+						viper.SetDefault(key, v)
+					} else {
+						panic(err)
+					}
+				case reflect.Bool:
+					if v, err := strconv.ParseBool(defaultValue); err == nil {
+						viper.SetDefault(key, v)
+					} else {
+						panic(err)
+					}
 				}
 			}
 		}
@@ -149,6 +162,12 @@ func setDynamicDefaults() {
 	viper.SetDefault("registry.username", generateRandomString(36))
 	viper.SetDefault("registry.password", generateRandomString(36))
 	viper.SetDefault("deploy.provider.azure.appService.name", fmt.Sprintf("locregappservice%s", generateRandomString(8)))
+	viper.SetDefault("deploy.provider.azure.containerInstance.ipAddress.ports", []map[string]interface{}{
+		{
+			"port":     80,
+			"protocol": "TCP",
+		},
+	})
 	viper.SetDefault("image.tag", getGitSHA())
 }
 
@@ -187,4 +206,34 @@ func (config *Config) IsNgrokConfigured() bool {
 		}
 	}
 	return true
+}
+
+// IsAppServiceSet checks if the App Service configuration is set in the config.
+// If it is set returns true if not returns false
+func (config *Config) IsAppServiceSet() bool {
+	emptyAppServicePlan := Config{}.Deploy.Provider.Azure.AppServicePlan
+	emptyAppService := Config{}.Deploy.Provider.Azure.AppService
+	return config.Deploy.Provider.Azure.AppServicePlan != emptyAppServicePlan &&
+		config.Deploy.Provider.Azure.AppService != emptyAppService
+}
+
+// IsContainerInstanceSet checks if the Container Instance configuration is set in the config.
+// If it is set returns true if not returns false
+func (config *Config) IsContainerInstanceSet() bool {
+	emptyContainerInstance := Config{}.Deploy.Provider.Azure.ContainerInstance
+	// DeepEqual must be used because ContainerInstance contains a slice of structs inside it
+	return !reflect.DeepEqual(config.Deploy.Provider.Azure.ContainerInstance, emptyContainerInstance)
+}
+
+func isInConfig(key string) bool {
+	if len(strings.Split(key, ".")) >= 5 {
+		return true
+	}
+	for _, k := range viper.AllKeys() {
+		if strings.Contains(k, strings.ToLower(key)) {
+			return true
+		}
+	}
+	viper.SetDefault(key, nil)
+	return false
 }

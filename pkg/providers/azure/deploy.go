@@ -89,12 +89,14 @@ func Deploy(azureConfig *parser.Config, envVars map[string]string) {
 		tracker.ResourceGroup = azureConfig.Deploy.Provider.Azure.ResourceGroup
 		log.Println("✅ Resource group created:", *resourceGroup.ID)
 	}
+	
 
-	// Determine the deployment type and call the appropriate deployment function
-	if azureConfig.Deploy.Provider.Azure.AppServicePlan.Name != "" {
+	//Determine the deployment type and call the appropriate deployment function
+	if azureConfig.IsAppServiceSet() {
 		DeployAppService(ctx, azureConfig, tunnelURL, envVars)
-	} else if azureConfig.Deploy.Provider.Azure.ContainerInstance.Name != "" {
+	} else if azureConfig.IsContainerInstanceSet() {
 		DeployACI(ctx, azureConfig, tunnelURL, envVars)
+
 	} else {
 		log.Fatal("❌ No valid deployment configuration found.")
 	}

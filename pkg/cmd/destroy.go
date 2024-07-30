@@ -19,7 +19,7 @@ var destroyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		resource := args[0]
 
-		profile, profilePath := loadProfile()
+		profile, profilePath := parser.LoadProfileData()
 		if profile == nil {
 			log.Fatalf("❌ Failed to load profile.")
 		}
@@ -87,25 +87,9 @@ func destroyAllResources(profile *parser.Profile, profilePath string) {
 	}
 }
 
-// saveProfile saves the profile to the specified path
+// saveProfile saves the profile
 func saveProfile(profile *parser.Profile, profilePath string) {
 	if err := parser.SaveProfile(profile, profilePath); err != nil {
 		log.Printf("❌ Error saving profile: %v", err)
 	}
-}
-
-// loadProfile loads the profile from the config file
-func loadProfile() (*parser.Profile, string) {
-	profilePath, err := parser.GetProfilePath()
-	if err != nil {
-		log.Printf("❌ Error getting profile path: %v", err)
-		return nil, ""
-	}
-
-	profile, err := parser.LoadOrCreateProfile(profilePath)
-	if err != nil {
-		log.Printf("❌ Error loading or creating profile: %v", err)
-		return nil, ""
-	}
-	return profile, profilePath
 }

@@ -12,9 +12,7 @@ import (
 )
 
 // DeployACI handles the deployment of an Azure Container Instance
-func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string) {
-
-	checkTunnelURLValidity(tunnelURL)
+func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string, envVars map[string]string) {
 
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
@@ -37,7 +35,7 @@ func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 	aciClient = aciClientFactory.NewContainerGroupsClient()
 
 	// Create a Container Instance
-	containerInstance, err := createACI(ctx, azureConfig, tunnelURL)
+	containerInstance, err := createACI(ctx, azureConfig, tunnelURL, envVars)
 	if err != nil {
 		cleanupResources(ctx, tracker)
 		handleAzureError(err)
@@ -54,9 +52,19 @@ func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 }
 
 // createACI creates a new Azure Container Instance
-func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string) (*armcontainerinstance.ContainerGroup, error) {
+func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string, envVars map[string]string) (*armcontainerinstance.ContainerGroup, error) {
 	containerConfig := azureConfig.Deploy.Provider.Azure.ContainerInstance
 	imageConfig := azureConfig.Image
+
+	// Set up environment variables for the container
+	envVarsList := []*armcontainerinstance.EnvironmentVariable{}
+	for key, value := range envVars {
+		envVarsList = append(envVarsList, &armcontainerinstance.EnvironmentVariable{
+			Name:  to.Ptr(key),
+			Value: to.Ptr(value),
+		})
+	}
+
 	containerGroup := armcontainerinstance.ContainerGroup{
 		Location: to.Ptr(azureConfig.Deploy.Provider.Azure.Location),
 		Properties: &armcontainerinstance.ContainerGroupPropertiesProperties{
@@ -65,7 +73,6 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 					Name: to.Ptr(containerConfig.Name),
 					Properties: &armcontainerinstance.ContainerProperties{
 						Image: to.Ptr(fmt.Sprintf("%s/%s:%s", tunnelURL, imageConfig.Name, imageConfig.Tag)),
-
 						Ports: []*armcontainerinstance.ContainerPort{
 							{
 								Port: to.Ptr(int32(containerConfig.IpAddress.Ports[0].Port)),
@@ -77,6 +84,7 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 								MemoryInGB: to.Ptr[float64](containerConfig.Resources.Requests.Memory),
 							},
 						},
+						EnvironmentVariables: envVarsList,
 					},
 				},
 			},
@@ -115,6 +123,7 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 	log.Println("✅ Azure Container Instance created:", *resp.ID)
 	return &resp.ContainerGroup, nil
 }
+
 func writeProfileContainerInstance(resourceGroupName, containerInstanceName string) error {
 	// Get the profile path
 	profilePath, err := parser.GetProfilePath()

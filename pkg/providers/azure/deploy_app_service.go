@@ -13,12 +13,7 @@ import (
 )
 
 // DeployAppService handles the deployment of an Azure App Service
-func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL string) {
-
-	err := checkTunnelURLValidity(tunnelURL)
-	if err != nil {
-		log.Fatal(err)
-	}
+func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL string, envVars map[string]string) {
 
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
@@ -52,7 +47,7 @@ func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL
 		log.Println("✅ App service plan created:", *appServicePlan.ID)
 	}
 
-	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID, tunnelURL)
+	appService, err := createWebApp(ctx, azureConfig, *appServicePlan.ID, tunnelURL, envVars)
 	if err != nil {
 		cleanupResources(ctx, tracker)
 		handleAzureError(err)
@@ -100,7 +95,7 @@ func createAppServicePlan(ctx context.Context, azureConfig *parser.Config) (*arm
 }
 
 // createWebApp creates a new Web App in Azure
-func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID, tunnelURL string) (*armappservice.Site, error) {
+func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePlanID, tunnelURL string, envVars map[string]string) (*armappservice.Site, error) {
 	log.Println("Creating Web App...")
 
 	siteConfig := azureConfig.Deploy.Provider.Azure.AppService.SiteConfig
@@ -120,6 +115,14 @@ func createWebApp(ctx context.Context, azureConfig *parser.Config, appServicePla
 			Name:  to.Ptr("DOCKER_REGISTRY_SERVER_PASSWORD"),
 			Value: to.Ptr(azureConfig.Registry.Password),
 		},
+	}
+
+	// Add environment variables from envVars to appSettings
+	for key, value := range envVars {
+		appSettings = append(appSettings, &armappservice.NameValuePair{
+			Name:  to.Ptr(key),
+			Value: to.Ptr(value),
+		})
 	}
 
 	// Create or update the Web App

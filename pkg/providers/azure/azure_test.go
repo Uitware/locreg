@@ -101,11 +101,11 @@ func TestDeployAppService(t *testing.T) {
 			log.Println("App Service Plan ID:", appServicePlanID)
 		}
 	})
-
+	envVars, _ := parser.LoadEnvVarsFromFile(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "env_example_locreg.env"))
 	// Test: Create Web App
 	t.Run("CreateWebApp", func(t *testing.T) {
 		tunnelURL := "dummy-tunnel-url" // Replace with a valid tunnel URL or mock it for the test
-		appService, err := createWebApp(ctx, config, appServicePlanID, tunnelURL)
+		appService, err := createWebApp(ctx, config, appServicePlanID, tunnelURL, envVars)
 		if err != nil {
 			t.Errorf("Failed to create web app: %v", err)
 		} else {
@@ -148,9 +148,9 @@ func TestDeployContainerInstance(t *testing.T) {
 
 	resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
 	aciClient = aciClientFactory.NewContainerGroupsClient()
-
+	envVars, _ := parser.LoadEnvVarsFromFile(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "env_example_locreg.env"))
 	t.Run("DeployContainerInstance", func(t *testing.T) {
-		aci, err := createACI(ctx, config, "docker.io")
+		aci, err := createACI(ctx, config, "docker.io", envVars)
 		if err != nil {
 			t.Fatalf("Failed to create ACI: %v", err)
 		} else {

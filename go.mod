@@ -11,6 +11,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/docker/docker v27.0.1+incompatible
 	github.com/docker/go-connections v0.5.0
+	github.com/joho/godotenv v1.5.1
 	github.com/pelletier/go-toml v1.9.5
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0

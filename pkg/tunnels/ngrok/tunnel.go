@@ -81,7 +81,7 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 			Cmd: []string{
 				"http",
 				// Forward traffic to registry on registry port
-				fmt.Sprintf("%v:%v", config.Registry.Name, strconv.Itoa(config.Registry.Port)),
+				fmt.Sprintf("%v:%v", config.Registry.Name, "5000"),
 			},
 			Env: []string{
 				"NGROK_AUTHTOKEN=" + os.Getenv("NGROK_AUTHTOKEN"),
@@ -141,13 +141,13 @@ func writeToProfile(dockerId string, port string) error {
 		return fmt.Errorf("❌ failed to decode response body: %v", err)
 	}
 	// write to profile
-	profile.Tunnel.ContainerID = dockerId
-	profile.Tunnel.URL = tunnelsResponse.Tunnels[0].PublicURL
-	err = parser.SaveProfile(profile, profilePath)
-	if err != nil {
-		return fmt.Errorf("❌ failed to write profile: %w", err)
+	profile.Tunnel = &parser.Tunnel{
+		ContainerID: dockerId,
+		URL:         tunnelsResponse.Tunnels[0].PublicURL,
 	}
-
+	if err := parser.SaveProfile(profile, profilePath); err != nil {
+		return fmt.Errorf("❌ failed to save profile: %w", err)
+	}
 	return nil
 }
 

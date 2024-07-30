@@ -74,7 +74,7 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 	}
 	fmt.Printf("✅ Container started with ID: %s\n", resp.ID)
 
-	err = writeProfile(resp.ID, config.Registry.Username, config.Registry.Password)
+	err = writeProfileLocalRegistry(resp.ID, config.Registry.Username, config.Registry.Password)
 	if err != nil {
 		defer errorCleanup(resp.ID, &err) // define postpone function to remove container if error occurs
 		return fmt.Errorf("❌ failed to write profile: %w", err)
@@ -142,8 +142,7 @@ func getNetworkId(dockerClient *client.Client, networkName string) string {
 	return resp[0].ID
 }
 
-// writeProfile writes the container ID and credentials to the profile file in TOML format
-func writeProfile(containerID, username, password string) error {
+func writeProfileLocalRegistry(containerID, username, password string) error {
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
 		return fmt.Errorf("❌ failed to get profile path: %w", err)
@@ -154,12 +153,13 @@ func writeProfile(containerID, username, password string) error {
 		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
-	profile.LocalRegistry.RegistryID = containerID
-	profile.LocalRegistry.Username = username
-	profile.LocalRegistry.Password = password
+	profile.LocalRegistry = &parser.LocalRegistry{
+		RegistryID: containerID,
+		Username:   username,
+		Password:   password,
+	}
 
-	err = parser.SaveProfile(profile, profilePath)
-	if err != nil {
+	if err := parser.SaveProfile(profile, profilePath); err != nil {
 		return fmt.Errorf("❌ failed to save profile: %w", err)
 	}
 

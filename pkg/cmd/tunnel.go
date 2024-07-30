@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"locreg/pkg/parser"
 	"locreg/pkg/tunnels/ngrok"
+	"log"
 )
 
 var tunnelCmd = &cobra.Command{
@@ -12,6 +13,12 @@ var tunnelCmd = &cobra.Command{
 	Short: "Create a tunnel to expose registry to the public Internet",
 	Long:  `Create a tunnel to expose your local registry, protected with credentials, to the public Internet`,
 	Run: func(cmd *cobra.Command, args []string) {
+		profile, _ := parser.LoadProfileData()
+
+		if profile.Tunnel != nil {
+			log.Fatalf("❌ Tunnel already exists. Please destroy it before creating a new one")
+		}
+
 		configFilePath := "locreg.yaml"
 		config, err := parser.LoadConfig(configFilePath)
 		if err != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"locreg/pkg/local_registry"
+	"locreg/pkg/parser"
 	"locreg/pkg/tunnels/ngrok"
 	"log"
 	"os"
@@ -15,6 +16,16 @@ var registryCmd = &cobra.Command{
 	Short: "Run a local container registry",
 	Long:  `Run a local registry, that is used for storing local development images and is exposed to public Internet via tunnel.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		profile, _ := parser.LoadProfileData()
+		if profile.Tunnel != nil {
+			log.Fatalf("❌ Tunnel already exists. Please destroy it before creating a new one")
+		}
+
+		if profile.LocalRegistry != nil {
+			log.Fatalf("❌ Local registry already exists. Please destroy it before creating a new one")
+
+		}
+
 		configFilePath := "locreg.yaml"
 		exePath, err := os.Executable()
 		if err != nil {

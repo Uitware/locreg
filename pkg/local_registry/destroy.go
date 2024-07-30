@@ -55,9 +55,5 @@ func DestroyLocalRegistry() error {
 		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
-	if profile.LocalRegistry.RegistryID == "" {
-		return fmt.Errorf("❌ registry ID not found in profile")
-	}
-
 	return StopAndRemoveContainer(profile.LocalRegistry.RegistryID)
 }

@@ -125,26 +125,27 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 }
 
 func writeProfileContainerInstance(resourceGroupName, containerInstanceName string) error {
-	// Get the profile path
 	profilePath, err := parser.GetProfilePath()
 	if err != nil {
 		return fmt.Errorf("❌ failed to get profile path: %w", err)
 	}
 
-	// Load or create a new profile
 	profile, err := parser.LoadOrCreateProfile(profilePath)
 	if err != nil {
 		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
-	// Update the profile with the new resource details
-	profile.CloudResources.ResourceGroupName = resourceGroupName
-	profile.CloudResources.ContainerInstanceName = containerInstanceName
-	// Save the updated profile
-	err = parser.SaveProfile(profile, profilePath)
-	if err != nil {
-		return fmt.Errorf("❌ failed to save profile: %w", err)
+	if profile.CloudResource == nil {
+		profile.CloudResource = &parser.CloudResource{}
 	}
 
+	profile.CloudResource.ContainerInstance = &parser.ContainerInstance{
+		ResourceGroupName:     resourceGroupName,
+		ContainerInstanceName: containerInstanceName,
+	}
+
+	if err := parser.SaveProfile(profile, profilePath); err != nil {
+		return fmt.Errorf("❌ failed to save profile: %w", err)
+	}
 	return nil
 }

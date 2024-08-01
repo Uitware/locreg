@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -82,4 +83,19 @@ func SaveProfile(profile *Profile, profilePath string) error {
 	}
 
 	return nil
+}
+
+func LoadProfileData() (*Profile, string) {
+	profilePath, err := GetProfilePath()
+	if err != nil {
+		log.Printf("❌ Error getting profile path: %v", err)
+		return nil, ""
+	}
+
+	profile, err := LoadOrCreateProfile(profilePath)
+	if err != nil {
+		log.Printf("❌ Error loading or creating profile: %v", err)
+		return nil, ""
+	}
+	return profile, profilePath
 }

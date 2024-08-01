@@ -25,18 +25,19 @@ func BuildCommand(configFilePath string, dir string) error {
 	if err != nil {
 		return fmt.Errorf("❌ failed to create Docker client: %w", err)
 	}
+	profile, _ := parser.LoadProfileData()
 
-	return imageBuildAndPush(cli, dir, config)
+	return imageBuildAndPush(cli, dir, config, profile)
 }
 
-func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.Config) error {
+func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.Config, profile *parser.Profile) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	ImageTagString := fmt.Sprintf("localhost:%d/%s:%s", config.Registry.Port, config.Image.Name, config.Image.Tag)
 	authConfig := registry.AuthConfig{
-		Username:      config.Registry.Username,
-		Password:      config.Registry.Password,
+		Username:      profile.LocalRegistry.Username,
+		Password:      profile.LocalRegistry.Password,
 		ServerAddress: fmt.Sprintf("http://127.0.0.1:%d", config.Registry.Port),
 	}
 

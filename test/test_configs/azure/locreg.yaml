@@ -18,7 +18,7 @@ tunnel:
 deploy:
   provider:
     azure:
-      location: "West US"
+      location: "Poland Central"
       resourceGroup: "rg_locreg"
       appServicePlan:
         name: "appserviceplanlocreg"

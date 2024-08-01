@@ -19,6 +19,11 @@ var deployCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		provider := args[0]
 
+		profile, _ := parser.LoadProfileData()
+
+		if profile.CloudResource != nil {
+			log.Fatalf("❌ Cloud resource already exists. Please destroy it before deploying a new one")
+		}
 		configFilePath := "locreg.yaml"
 		config, err := parser.LoadConfig(configFilePath)
 		if err != nil {

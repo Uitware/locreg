@@ -153,7 +153,6 @@ Commands:
 - ```deploy``` - creates a serverless container runtime resource with a specified cloud provider and deploys your application. Use this command with a provider (e.g., azure) and optionally specify an environment file using --env and the path to a .env file.
 ```
 locreg deploy azure --env path/to/envfile
-
 ```
 
 - ```push``` - build from the specified directory and Dockerfile and push a container image to the local registry

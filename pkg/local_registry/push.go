@@ -35,8 +35,8 @@ func imageBuildAndPush(dockerClient *client.Client, dir string, config *parser.C
 
 	ImageTagString := fmt.Sprintf("localhost:%d/%s:%s", config.Registry.Port, config.Image.Name, config.Image.Tag)
 	authConfig := registry.AuthConfig{
-		Username:      config.Registry.Username,
-		Password:      config.Registry.Password,
+		Username:      config.Registry.Username, // TODO set this to a profile specific username
+		Password:      config.Registry.Password, // TODO set this to a profile specific password
 		ServerAddress: fmt.Sprintf("http://127.0.0.1:%d", config.Registry.Port),
 	}
 

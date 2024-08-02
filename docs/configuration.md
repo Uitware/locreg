@@ -1,6 +1,6 @@
 # Configuration file
 `locreg` uses a configuration file to store the settings. The configuration file is a .yaml file with name `locreg.yaml`. 
-The configuration file is stored at the same folder as dockerfile or at the root of the project.
+The configuration file is stored in the same folder as dockerfile or at the root of the project.
 
 
 ## Configuration file structure
@@ -19,7 +19,8 @@ deploy:
 
 tags:
 ```
-Each of the parts corresponds to single item that `locreg` create except of tags. The tags part is used to store the tags that are used to tag resources deployed in cloud vendors.
+Each of the parts corresponds to single item that `locreg` create except of tags. 
+The tags part is used to store the tags that are used to tag resources deployed in cloud vendors.
 
 
 ## The default values
@@ -57,8 +58,8 @@ registry:
   username: "myUsername" # Username of the registry may be omitted
   password: "myPassword" # Password of the registry may be omitted
 ```
-> As you can see all configuration items for registry are optional. So if you want you can only specify `registry: ` 
-  in your config and everything else will be set to defaults.
+> As you can see, all configuration items for registry are optional. So if you want you can only specify `registry: ` 
+  in your config and everything else will be set to default.
 
 ### Registry default values
 The default values for the registry configuration are predefined in the `locreg` except of password and username witch are randomly generated 32 characters long strings.

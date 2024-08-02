@@ -4,11 +4,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/spf13/viper"
 	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type Config struct {
@@ -21,7 +22,7 @@ type Config struct {
 		Password string `mapstructure:"password"` // Set separately as should be unique each time
 	} `mapstructure:"registry"`
 	Image struct {
-		Name string `mapstructure:"name" default:"locreg-builded-image"`
+		Name string `mapstructure:"name" default:"locreg-built-image"`
 		Tag  string `mapstructure:"tag"` // Set a git SHA if not peresent default to latest
 	} `mapstructure:"image"`
 	Tunnel struct {

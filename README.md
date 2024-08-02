@@ -135,10 +135,10 @@ With Go 1.16+, build and install the latest released version:
 Use the following Bash script to install locreg from Github Releases:
 
 ```
-curl -OL https://github.com/Uitware/locreg/releases/download/v0.1.1-alpha/locreg.tar.gz
+curl -OL https://github.com/Uitware/locreg/releases/download/v0.1.0/locreg.tar.gz
 tar -zxvf locreg.tar.gz
 chmod +x locreg
-mv locreg /usr/local/bin/locreg
+sudo mv locreg /usr/local/bin/locreg
 
 # to clean resources: 
 rm locreg.tar.gz

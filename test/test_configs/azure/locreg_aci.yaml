@@ -1,0 +1,35 @@
+registry:
+  port: 5555
+  tag: "2"
+  image: "registry"
+  name: "my-registry"
+  username: "12"
+  password: "12"
+
+image:
+  name: "vitalikstelmah60/weather-app"
+  tag: "latest"
+
+tunnel:
+  provider:
+    ngrok: # provider name
+      # provider specific configuration if provided
+
+deploy:
+  provider:
+    azure:
+      location: "Poland Central" # Spain Central Poland Central
+      resourceGroup: "rg_locreg"
+      containerInstance:
+        name: "weatherappcontainer"
+        osType: "Linux"
+        restartPolicy: "OnFailure"
+        ipAddress:
+          type: "Public"
+          ports:
+            - port: 80
+              protocol: "TCP"
+        resources:
+          requests:
+            cpu: 1.0
+            memory: 1.5

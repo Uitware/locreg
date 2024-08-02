@@ -1,0 +1,33 @@
+registry:
+  port: 5555
+  tag: "2"
+  image: "registry"
+  name: "my-registry"
+  username: "12"
+  password: "12"
+
+image:
+  name: "weather-app"
+  tag: "latest"
+
+tunnel:
+  provider:
+    ngrok: # provider name
+      # provider specific configuration if provided
+
+deploy:
+  provider:
+    azure:
+      location: "Poland Central"
+      resourceGroup: "rg_locreg"
+      appServicePlan:
+        name: "appserviceplanlocreg"
+        sku:
+          name: "B1"
+          capacity: 1
+        planProperties:
+          reserved: true
+      appService:
+        name: "appservice132"
+        siteConfig:
+          alwaysOn: true

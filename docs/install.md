@@ -9,7 +9,7 @@ You may also install and use it on Windows machine but first you would need to i
 go install github.com/Uitware/locreg@latest  
 ```
 
-### using bash script
+### Using a bash script
 ```bash
 curl -OL https://github.com/Uitware/locreg/releases/download/v0.1.1-alpha/locreg.tar.gz
 tar -zxvf locreg.tar.gz
@@ -31,7 +31,7 @@ If you are planing to deploy your images to Azure, you should also have Azure CL
 You can install it by following the instructions [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 
 ---
-## Whats next?
+## What's next?
 - Get familiar with `locreg` [configuration options](./configuration.md)
 - Get familiar with [locreg](./cli/locreg.md) to see how to use the `locreg` command line interface.
 - Get started with [getting started](./getting_started.md) guide to see how to use `locreg` to deploy your app.

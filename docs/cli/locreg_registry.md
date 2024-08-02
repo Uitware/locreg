@@ -5,7 +5,7 @@ Values for registry and tunnel are taken from the configuration file.
 
 ### Commands:
 - `locreg registry rotate` - Rotate the password of the registry.
-- `locreg registry only-registry` - Create only the local registry.
+- `locreg registry only-registry` - Create only the local registry. // Will be added in the next release
 
 ### Options:
 ```

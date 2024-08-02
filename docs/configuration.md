@@ -255,6 +255,6 @@ DATABASE_URL=postgres://user:password@localhost:5432/myappdb
 And to apply it, you should use command `locreg deploy azure --env` it deploy your app with the specified environment variables.
 
 ---
-## Whats next?
+## What's next?
 - Get familiar with [locreg](./cli/locreg.md) to see how to use the `locreg` command line interface.
 - Get started with [getting started](./getting_started.md) guide to see how to use `locreg` to deploy your app.

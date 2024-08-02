@@ -21,7 +21,6 @@ nav:
   - "Configuration": configuration.md
   - Commands:
       - "locreg": cli/locreg.md
-      - "locreg env": cli/locreg_env.md
       - "locreg push": cli/locreg_push.md
       - "locreg tunnel": cli/locreg_tunnel.md
       - "locreg deploy": cli/locreg_deploy.md

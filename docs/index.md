@@ -6,9 +6,9 @@
 
 `locreg` is a simple way to create local repo and cloud resources to host your app in any cloud you want. It also 
 provides support for azure container hosting solutions like: Azure Container Instances and Azure App services.
-It's core focus is to provide you with secure local storage for your images that can be easily deployed or transferred anywhere you need.
+Its core focus is to provide you with secure local storage for your images that can be easily deployed or transferred anywhere you need.
 
-As `locreg` is a cloud-agnostic solution, you can use it with any cloud provider you want. or even in your on-premises environment which have access to internet.
+As `locreg` is a cloud-agnostic solution, you can use it with any cloud provider you want. or even in your on-premises environment that has access to the internet.
 
 ---
 
@@ -16,7 +16,7 @@ As `locreg` is a cloud-agnostic solution, you can use it with any cloud provider
 
 ---
 
-## Whats next?
+## What's next?
 - Get familiar with `locreg` [configuration options](./configuration.md)
 - Get familiar with [locreg](./cli/locreg.md) to see how to use the `locreg` command line interface.
 - Get started with [getting started](./getting_started.md) guide to see how to use `locreg` to deploy your app.

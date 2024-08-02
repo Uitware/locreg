@@ -3,13 +3,13 @@
 ### Setup 
 [Install `locreg` and Prerequisites](./install.md)
 
->To start using `locreg` you need to have: `locreg`, docker and Azure installed on your machine.
+>To start using `locreg` you need to have: `locreg`, `docker` and corresponding cloud's CLI installed on your machine. Currently only `az cli` is supported. 
 
 ### Import your tunnel credentials 
 ```bash
-exec NGROK_AUTHTOKEN=your_ngrok_auth_token
+export NGROK_AUTHTOKEN=your_ngrok_auth_token
 ```
-### Then Authenticate with Azure 
+### Then authenticate with Azure 
 ```bash
 az login
 ```
@@ -49,15 +49,15 @@ deploy:
 tags:
   managed-by: "locreg"
 ```
-This configuration creates a local registry, tunnel and deploys the image to Azure App Service.
+This configuration creates a local registry, tunnel and deploys the image to the Azure App Service.
 
-### Crate a sample Dockerfile
+### Create a sample Dockerfile
 ```Dockerfile
 FROM nginx:alpine
 RUN echo "Hello from locreg" > /usr/share/nginx/html/index.html
 ```
 
-### Create registry then build and push the image
+### Create registry, then build and push the image
 ```bash
 locreg registry
 locreg push
@@ -67,5 +67,5 @@ locreg deploy azure
 
 ---
 ## What's next?
-- Get familiar with `locreg` [configuration options](./configuration.md)
-- Now take a look at the [locreg cli](./cli/locreg.md) to see how to use the `locreg` command line interface.
+- Use [getting started](./getting_started.md) guide to see how to use `locreg` to deploy your app.
+- Get familiar with `locreg` using [locreg CLI](./cli/locreg.md) guide.

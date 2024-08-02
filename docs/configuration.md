@@ -1,10 +1,10 @@
 # Configuration file
-`locreg` uses a configuration file to store the settings. The configuration file is a .yaml file with name `locreg.yaml`. 
-The configuration file is stored in the same folder as dockerfile or at the root of the project.
+`locreg` uses a configuration file to store the settings. The configuration file is a `.yaml` file with name `locreg.yaml`. 
+The configuration file is stored in the same folder as Dockerfile or at the root of the project.
 
 
 ## Configuration file structure
-The Local registry configuration file consists of five parts as shown below.
+The locreg configuration file consists of five sections as shown below.
 ```yaml
 registry:
 
@@ -19,13 +19,13 @@ deploy:
 
 tags:
 ```
-Each of the parts corresponds to single item that `locreg` create except of tags. 
-The tags part is used to store the tags that are used to tag resources deployed in cloud vendors.
+Each of the parts corresponds to a single item that `locreg` creates except of tags. 
+The `tags` part is used to store the tags that are used to tag cloud resources
 
 
 ## The default values
 Before going further to configuration, **it's important to understand how default values work.** 
-If you want to use defaults, you must specify a type of service for which you want to use defaults. Like in example below:
+If you want to use defaults, you must specify a type of service for which you want to use defaults. Like in this example below:
 ```yaml
 deploy:
   provider:
@@ -34,7 +34,7 @@ deploy:
     resourceGroup: "LocregResourceGroup"
     containerInstance:
 ```
-The `containerInstance:` in this example receives default values for all properties. If you want to specify some properties, you can do it like in the example below:
+The `containerInstance:` in this configuration has default values for all the properties. If you want to set some particular properties to non-default values, you can do it like in the example below:
 ```yaml
 deploy:
   provider:
@@ -45,7 +45,7 @@ deploy:
       name: "Sample-Conainerinstance"
       restartPolicy: "OnFailure"
 ```
-> This way, all values that aren't specified are set to defaults.
+> This way, all the values which you haven't explicitly overridden, are set to the defaults.
 
 ## Registry configuration
 The registry configuration part is used to store the settings of the local registry. The registry configuration part consists of the following items.
@@ -58,11 +58,10 @@ registry:
   username: "myUsername" # Username of the registry may be omitted
   password: "myPassword" # Password of the registry may be omitted
 ```
-> As you can see, all configuration items for registry are optional. So if you want you can only specify `registry: ` 
-  in your config and everything else will be set to default.
+> As you can see, all configuration items for registry are optional. So if you want you can only specify `registry:` in your config, and it will be launched with all the default values.
 
 ### Registry default values
-The default values for the registry configuration are predefined in the `locreg` except of password and username witch are randomly generated 32 characters long strings.
+The default values for the registry configuration are predefined by the `locreg`, except of password and username witch are randomly generated 32 characters long strings.
 Default values are as follows:
 ```yaml
 registry:
@@ -79,16 +78,16 @@ registry:
 The image configuration part is used to store the settings of the image that is used to deploy the registry. The image configuration part consists of the following items.
 ```yaml
 image:
-  name: "your dsired name" # Name of the image may be omitted
-  tag: " version " # Tag of the image may be omitted
+  name: "your desired name" # Name of the image may be omitted
+  tag: "version" # Tag of the image may be omitted
 ```
 
 ### Image default values
 By default, the image configuration is set to the following values:
 ```yaml
 image:
-  name: "locreg-builded-image"
-  tag: # is your current git SHA or "latest" if git is not initialized 
+  name: "locreg-built-image"
+  tag: # your current git SHA or "latest", if git repo isn't initialized 
 ```
 
 ## Tunnel configuration 
@@ -167,7 +166,7 @@ deploy:
         planProperties:
           reserved: true
       appService:
-        name: "locregappservice[random_suffix]" # [random_suffix] is randomly generated 8 characters long string
+        name: "locregappservice[random_suffix]" # [random_suffix] is a randomly generated 8 characters long string
         siteConfig:
           alwaysOn: false
 ```
@@ -218,7 +217,7 @@ deploy:
 ```
 
 ## Tags configuration
-Tags configuration part is used to store the tags that are used to tag resources deployed in cloud vendors.
+Tags configuration part is used to store the tags that are used to tag cloud resources
 The tags configuration part consists of the following items:
 ```yaml
 tags:
@@ -238,24 +237,24 @@ tags:
 
 ### Tags turning on/off
 Tags part can be omitted, but if you do tag `managed-by: locreg` will be still added to all resources created by `locreg`.
-To turn off tags initially, you can set `tags: ` key word to `false` as shown bellow:  
-**Notice it isn't recommended to turn off tags**
+To disable tags, you can explicitly set `tags:` to `false` as shown bellow:  
+**Notice that it isn't recommended to disable tags - they allow to easily identify locreg-managed resources**
 ```yaml
 tags: false
 ```
 ---
 ## Configuration file for env variables
 To specify environment variables in the configuration file, you should use a .env file. The .env file should be placed in 
-the same folder as the configuration file or project root. The .env file should contain the environment variables in the following format:
+the same folder as the configuration file or in the repo root. The .env file should contain the environment variables in the following format:
 ```env
 APP_NAME=MyApp
 APP_ENV=development
 APP_PORT=8080
 DATABASE_URL=postgres://user:password@localhost:5432/myappdb
 ```
-And to apply it, you should use command `locreg deploy azure --env` it deploy your app with the specified environment variables.
+And to apply it, you should use command `locreg deploy azure --env`, which deploys your app with the specified environment variables.
 
 ---
 ## What's next?
-- Get familiar with [locreg](./cli/locreg.md) to see how to use the `locreg` command line interface.
-- Get started with [getting started](./getting_started.md) guide to see how to use `locreg` to deploy your app.
+- Use [getting started](./getting_started.md) guide to see how to use `locreg` to deploy your app.
+- Get familiar with `locreg` using [locreg CLI](./cli/locreg.md) guide.

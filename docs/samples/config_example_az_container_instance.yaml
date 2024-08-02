@@ -18,7 +18,7 @@ tunnel:
 deploy:
   provider:
     azure:
-      location: "Poland Central" # Spain Central Poland Central
+      location: "Poland Central"
       resourceGroup: "rg_locreg"
       containerInstance:
         name: "weatherappcontainer"
@@ -35,13 +35,15 @@ deploy:
             memory: 1.5
 
 tags: # Tags for the cloud resources
-  managed-by: "locreg"  # Can be specified one
-# Or multiple tags
+  managed-by: "locreg"  #Can be specified one or multiple tags
+
+# Multiple tags example: 
+# 
 #tags:
 #  locreg-version: "0.1.0"
 #  test: "test"
 
-# By default, loccreg test all resources as managed-by: locreg
-# If you want to turn off tags which is not recommended, you can set it to false like in example below
+# By default, locreg tags all resources as managed-by: locreg
+# If you want to turn off the tags (which is not recommended), you can set it to `false` like in example below
 #tags: false
 

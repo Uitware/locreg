@@ -1,7 +1,7 @@
 package main
 
 import (
-	"locreg/pkg/cmd"
+	"github.com/Uitware/locreg/pkg/cmd"
 	"log"
 )
 

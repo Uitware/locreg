@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/Uitware/locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/providers/aws"
+	"github.com/Uitware/locreg/pkg/providers/azure"
+	"github.com/Uitware/locreg/pkg/providers/gcp"
 	"github.com/spf13/cobra"
-	"locreg/pkg/parser"
-	"locreg/pkg/providers/aws"
-	"locreg/pkg/providers/azure"
-	"locreg/pkg/providers/gcp"
 	"log"
 )
 

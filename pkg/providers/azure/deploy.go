@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/parser"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
@@ -89,7 +89,6 @@ func Deploy(azureConfig *parser.Config, envVars map[string]string) {
 		tracker.ResourceGroup = azureConfig.Deploy.Provider.Azure.ResourceGroup
 		log.Println("✅ Resource group created:", *resourceGroup.ID)
 	}
-	
 
 	//Determine the deployment type and call the appropriate deployment function
 	if azureConfig.IsAppServiceSet() {

@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/parser"
 	"time"
 
 	"github.com/docker/docker/api/types"

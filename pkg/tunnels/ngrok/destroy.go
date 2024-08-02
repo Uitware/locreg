@@ -2,8 +2,8 @@ package ngrok
 
 import (
 	"fmt"
-	"locreg/pkg/local_registry"
-	"locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/local_registry"
+	"github.com/Uitware/locreg/pkg/parser"
 	"log"
 )
 

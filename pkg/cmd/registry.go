@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/Uitware/locreg/pkg/local_registry"
+	"github.com/Uitware/locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/tunnels/ngrok"
 	"github.com/spf13/cobra"
-	"locreg/pkg/local_registry"
-	"locreg/pkg/parser"
-	"locreg/pkg/tunnels/ngrok"
 	"log"
 	"os"
 	"os/exec"

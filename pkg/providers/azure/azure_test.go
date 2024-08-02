@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/parser"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v2"

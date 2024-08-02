@@ -3,13 +3,13 @@ package local_registry
 import (
 	"context"
 	"fmt"
+	"github.com/Uitware/locreg/pkg/parser"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"locreg/pkg/parser"
 	"log"
 )
 

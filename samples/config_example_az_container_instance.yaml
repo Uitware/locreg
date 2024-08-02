@@ -1,0 +1,49 @@
+registry:
+  port: 5555
+  tag: "2"
+  image: "registry"
+  name: "my-registry"
+  username: "12"
+  password: "12"
+
+image:
+  name: "weather-app"
+  tag: "latest"
+
+tunnel:
+  provider:
+    ngrok: # provider name
+      # provider specific configuration if provided
+
+deploy:
+  provider:
+    azure:
+      location: "Poland Central"
+      resourceGroup: "rg_locreg"
+      containerInstance:
+        name: "weatherappcontainer"
+        osType: "Linux"
+        restartPolicy: "OnFailure"
+        ipAddress:
+          type: "Public"
+          ports:
+            - port: 80
+              protocol: "TCP"
+        resources:
+          requests:
+            cpu: 1.0
+            memory: 1.5
+
+tags: # Tags for the cloud resources
+  managed-by: "locreg"  #Can be specified one or multiple tags
+
+# Multiple tags example: 
+# 
+#tags:
+#  locreg-version: "0.1.0"
+#  test: "test"
+
+# By default, locreg tags all resources as managed-by: locreg
+# If you want to turn off the tags (which is not recommended), you can set it to `false` like in example below
+#tags: false
+

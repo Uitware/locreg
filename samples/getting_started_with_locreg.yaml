@@ -1,0 +1,33 @@
+registry:
+  port: 8080
+  username: "locreg"
+
+image:
+  name: "sample-app"
+  tag: "latest"
+
+tunnel:
+  provider:
+    ngrok:
+      name: my-locreg-test
+      port: 5050
+      networkName: ngrok-network
+
+deploy:
+  provider:
+    azure:
+      location: "East US"
+      resourceGroup: "LocregGettingStarted"
+      appServicePlan:
+        sku:
+          name: "F1"
+          capacity: 1
+        planProperties:
+          reserved: true
+      appService:
+        siteConfig:
+          alwaysOn: false
+
+tags:
+  managed-by: "locreg"
+

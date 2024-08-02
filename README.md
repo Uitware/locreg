@@ -79,8 +79,9 @@ tags:                                           # Tags for the cloud resources
   locreg-version: "0.1.0"
   test: "test"
 
-# By default, loccreg test all resources as managed-by: locreg
-# If you want to disable tags which we do not recommend, you can set it to false like in example below
+# By default, locreg tags all resources as managed-by: locreg
+# If you want to turn off the tags (which is not recommended), you can set it to `false`` like in example below
+#tags: false
 
 
 ```
@@ -111,8 +112,9 @@ tags:                                  # Tags for the cloud resources
   locreg-version: "0.1.0"
   test: "test"
 
-# By default, loccreg test all resources as managed-by: locreg
-# If you want to disable tags which we do not recommend, you can set it to false like in example below
+# By default, locreg tags all resources as managed-by: locreg
+# If you want to turn off the tags (which is not recommended), you can set it to `false`` like in example below
+#tags: false
 ```
 
 Note that you should authenticate with ```az``` CLI in order to use Azure application backend: https://learn.microsoft.com/en-us/cli/azure/reference-index?view=azure-cli-latest#az-login

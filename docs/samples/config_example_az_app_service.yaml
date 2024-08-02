@@ -1,0 +1,44 @@
+registry:
+  port: 5555
+  tag: "2"
+  image: "registry"
+  name: "my-registry"
+  username: "myUsername"
+  password: "myPassword"
+
+image:
+  name: "weather-app"
+  tag: "latest"
+
+tunnel:
+  provider:
+    ngrok: # provider name
+      # provider specific configuration if provided
+
+deploy:
+  provider:
+    azure:
+      location: "East US" # Location of all resources
+      resourceGroup: "myResourceGroup" # Resource group name
+      appServicePlan:
+        name: "myAppServicePlan" # App service plan name
+        sku:
+          name: "B1" # App service plan SKU
+          capacity: 1 # App service plan capacity
+        planProperties:
+          reserved: true # App service plan reserved
+      appService:
+        name: "myAppService" # App service name
+        siteConfig:
+          alwaysOn: true # App service always on
+
+tags: # Tags for the cloud resources
+  managed-by: "locreg"  # Can be specified one
+# Or multiple tags
+#tags:
+#  locreg-version: "0.1.0"
+#  test: "test"
+
+# By default, loccreg test all resources as managed-by: locreg
+# If you want to disable tags which we do not recommend, you can set it to false like in example below
+#tags: false

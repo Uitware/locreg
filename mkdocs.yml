@@ -1,0 +1,35 @@
+site_name: "locreg: Better then cloud registry"
+#site_url: will be added after repo became public
+repo_url: https://github.com/Uitware/locreg
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: images/favicon.ico
+  favicon: images/favicon.ico
+  custom_dir: docs/custom/
+  palette:
+    scheme: slate
+    primary: indigo
+    accent: cyan
+
+
+nav:
+  - Introduction: index.md
+  - Installation: install.md
+  - "Getting Started": getting_started.md
+  - "Configuration": configuration.md
+  - Commands:
+      - "locreg": cli/locreg.md
+      - "locreg push": cli/locreg_push.md
+      - "locreg tunnel": cli/locreg_tunnel.md
+      - "locreg deploy": cli/locreg_deploy.md
+      - "locreg destroy": cli/locreg_destroy.md
+      - "locreg registry": cli/locreg_registry.md
+
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true

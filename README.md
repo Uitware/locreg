@@ -22,51 +22,100 @@ locreg uses ```locreg.yaml``` as a source of truth for development environment t
 
 ```
 registry:
-  port: 5555
-  tag: "2"
-  image: "registry"
-  name: "my-registry"
-  username: "myUsername"
-  password: "myPassword"
+  port: 5555              # Port on which the local registry will run
+  tag: "2"                # Tag for the Docker registry image
+  image: "registry"       # Docker image to use for the local registry
+  name: "my-registry"     # Name for the local registry container
+  username: "myUsername"  # Username for accessing the registry
+  password: "myPassword"  # Password for accessing the registry
 ```
 
-☁️ Application backend (configuration of the serverless cloud runtime resource) example: 
+🖼️ Image configuration
+defines the name and tag for the Docker image that will be built and deployed.
 
 ```
-deploy:
-  provider:
-    azure:
-      location: "East US" # Azure location for resources
-      resourceGroup: "myResourceGroup" # RG name
-      appServicePlan:
-        name: "myAppServicePlan" # App Service Plan name
-        sku:
-          name: "F1" # ASP SKU
-          capacity: 1 # ASP capacity
-          tier: "FREE" # ASP tier
-        planProperties:
-          reserved: true # ASP reserved option
-      appService:
-        name: "myAppService" # App Service name
-        siteConfig:
-          alwaysOn: true # AS always on option
-          dockerRegistryServerUrl: "https://index.docker.io/v1/"
-          dockerImage: "myDockerUsername/myImage"
-          tag: "latest"
+image:
+  name: "locreg-app"   # Name of the Docker image to build and deploy
+  tag: "latest"        # Tag for the Docker image (e.g., latest, v1.0.0)
 ```
-
-Note that you should authenticate with ```az``` CLI in order to use Azure application backend: https://learn.microsoft.com/en-us/cli/azure/reference-index?view=azure-cli-latest#az-login
-
 
 🌐 Tunnel backend configuratio (Ngrok by default)
 
 ```
 tunnel:
   provider:
-    ngrok
+    ngrok:
+      name: "my-locreg-test"        # Name for the Ngrok tunnel instance
+      port: 5050                    # Port on which the Ngrok tunnel will run
+      networkName: "ngrok-network"  # Name of the Docker network to which the Ngrok tunnel container will connect
+
 ```
 
 Note that you should export ```NGROK_AUTHTOKEN``` in order to use Ngrok tunnel backend: 
+
+
+☁️ Application backend (configuration of the serverless cloud runtime resource) example: 
+
+☁️ Azure App Service:
+
+```
+deploy:
+  provider:
+    azure:
+      location: "East US"                       # Azure location for the resources
+      resourceGroup: "LocregResourceGroup"      # Name of the Azure resource group
+      appServicePlan:
+        name: "LocregAppServicePlan"            # Name of the App Service Plan
+        sku:
+          name: "B1"                            # Pricing tier (SKU) for the App Service Plan
+          capacity: 1                           # Capacity of the plan (number of instances)
+        planProperties:
+          reserved: true                        # Indicates if the plan should use a reserved instance (for Linux)
+      appService:
+        name: "LocregAppService1112233"         # Name of the App Service
+        siteConfig:
+          alwaysOn: true                        # Keeps the app always running
+tags:                                           # Tags for the cloud resources                   
+  locreg-version: "0.1.0"
+  test: "test"
+
+# By default, loccreg test all resources as managed-by: locreg
+# If you want to disable tags which we do not recommend, you can set it to false like in example below
+
+
+```
+
+☁️ Azure Container Instance:
+
+```
+deploy:
+  provider:
+    azure:
+      location: "Poland Central"       # Azure location for the resources
+      resourceGroup: "rg_locreg"       # Name of the Azure resource group
+      containerInstance:
+        name: "weatherappcontainer"    # Name of the Container Instance
+        osType: "Linux"                # Operating system type (e.g., Linux)
+        restartPolicy: "OnFailure"     # Restart policy for the container (e.g., Always, OnFailure)
+        ipAddress:
+          type: "Public"               # Type of IP address (e.g., Public, Private)
+          ports:
+            - port: 80                 # Port to expose
+              protocol: "TCP"          # Protocol for the exposed port (e.g., TCP, UDP)
+        resources:
+          requests:
+            cpu: 1.0                   # Number of CPUs allocated
+            memory: 1.5                # Amount of memory allocated (in GB)
+
+tags:                                  # Tags for the cloud resources                   
+  locreg-version: "0.1.0"
+  test: "test"
+
+# By default, loccreg test all resources as managed-by: locreg
+# If you want to disable tags which we do not recommend, you can set it to false like in example below
+```
+
+Note that you should authenticate with ```az``` CLI in order to use Azure application backend: https://learn.microsoft.com/en-us/cli/azure/reference-index?view=azure-cli-latest#az-login
 
 
 ## ```locreg``` installation
@@ -101,8 +150,29 @@ Use ```locreg --help``` to display usage info.
 
 Commands: 
 
-- ```deploy``` - create a cloud provider's serverless container runtime resource and deploy your application
-- ```push``` - build and push a container image to the local registry
+- ```deploy``` - creates a serverless container runtime resource with a specified cloud provider and deploys your application. Use this command with a provider (e.g., azure) and optionally specify an environment file using --env and the path to a .env file.
+```
+locreg deploy azure --env path/to/envfile
+```
+
+- ```push``` - build from the specified directory and Dockerfile and push a container image to the local registry
+```
+locreg push path/to/dockerfile
+```
 - ```registry``` - start a local container registry
+```
+locreg registry
+```
 - ```tunnel``` - spin up a tunnel to expose local container registry to the public Internet
-- ```env``` - manage the environment variables used by locreg
+```
+locreg tunnel
+```
+- ```destroy``` - removes specific resources or all resources created by locreg
+  - `registry`: Destroys the local container registry.
+  - `tunnel`: Destroys the public access tunnel.
+  - `cloud`: Destroys cloud resources (e.g., serverless instances).
+  - `all`: Destroys all resources, including registry, tunnel, and cloud resources.
+```  
+locreg destroy all
+locreg destroy registry
+  ```

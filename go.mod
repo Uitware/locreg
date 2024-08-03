@@ -1,4 +1,4 @@
-module locreg
+module github.com/Uitware/locreg
 
 go 1.22.4
 

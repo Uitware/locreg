@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/parser"
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"

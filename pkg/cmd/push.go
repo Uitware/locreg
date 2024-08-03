@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"locreg/pkg/local_registry"
+	"github.com/Uitware/locreg/pkg/local_registry"
 
 	"github.com/spf13/cobra"
 )

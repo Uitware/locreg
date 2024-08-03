@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/parser"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"

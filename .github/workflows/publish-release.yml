@@ -62,5 +62,5 @@ jobs:
           echo "Tag does not exist yet"
         fi;
     
-        git tag -a latest {{ github.sha }} -m "This tag is automatically updated to point to the latest release."
+        git tag -a latest -m "This tag is automatically updated to point to the latest release."
         git push origin latest

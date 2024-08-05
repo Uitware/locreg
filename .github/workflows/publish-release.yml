@@ -48,6 +48,8 @@ jobs:
         asset_content_type: application/gzip
 
     - name: Change position of latest tag to current release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.email "action@github.com"
         git config --global user.name "GitHub Action"  
@@ -60,5 +62,5 @@ jobs:
           echo "Tag does not exist yet"
         fi;
     
-        git tag -a latest {{ github.ref }} -m "This tag is automatically updated to point to the latest release."
+        git tag -a latest {{ github.sha }} -m "This tag is automatically updated to point to the latest release."
         git push origin latest

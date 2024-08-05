@@ -46,3 +46,19 @@ jobs:
         asset_path: ./locreg.tar.gz
         asset_name: locreg.tar.gz
         asset_content_type: application/gzip
+
+    - name: Change position of latest tag to current release
+      run: |
+        git config --global user.email "action@github.com"
+        git config --global user.name "GitHub Action"  
+        
+        # Check does tag exits before deleting it
+        if git show-ref --tags latest; then
+          git tag -d latest
+          git push origin :refs/tags/latest || true
+        else
+          echo "Tag does not exist yet"
+        fi;
+    
+        git tag -a latest {{ github.ref }} -m "This tag is automatically updated to point to the latest release."
+        git push origin latest

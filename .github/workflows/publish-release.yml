@@ -55,7 +55,7 @@ jobs:
         # Check does tag exits before deleting it
         if git show-ref --tags latest; then
           git tag -d latest
-          git push origin :refs/tags/latest || true
+          git push origin :refs/tags/latest
         else
           echo "Tag does not exist yet"
         fi;

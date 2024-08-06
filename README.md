@@ -14,6 +14,64 @@ Serverless container runtimes like AWS ECS, Azure App Service for Containers, GC
 
 All configuration is defined and controlled via single ```locreg.yaml``` file - please see ```config_example.yaml``` in the repo root. 
 
+## ```locreg``` installation
+
+Currently supported platforms include only Linux amd64. 
+We're planning to add MacOS ARM and Linux ARM support soon.
+There are several ways to install locreg:
+
+#### Go install
+
+With Go 1.16+, build and install the latest released version:
+
+```go install github.com/Uitware/locreg@latest```
+
+#### Bash script
+
+Use the following Bash script to install locreg from Github Releases:
+
+```
+curl -OL https://github.com/Uitware/locreg/releases/download/v0.1.0/locreg.tar.gz
+tar -zxvf locreg.tar.gz
+chmod +x locreg
+sudo mv locreg /usr/local/bin/locreg
+
+# to clean resources: 
+rm locreg.tar.gz
+```
+
+## ```locreg``` usage
+
+Use ```locreg --help``` to display usage info.
+
+Commands: 
+
+- ```deploy``` - creates a serverless container runtime resource with a specified cloud provider and deploys your application. Use this command with a provider (e.g., `azure`) and optionally specify an environment file using --env and the path to a .env file.
+```
+locreg deploy azure --env path/to/envfile
+```
+
+- ```push``` - build from the specified directory that contains Dockerfile for your container image and push the image to your local registry
+```
+locreg push path/to/dockerfile
+```
+- ```registry``` - start a local container registry
+```
+locreg registry
+```
+- ```tunnel``` - spin up a tunnel to expose local container registry to the public Internet
+```
+locreg tunnel
+```
+- ```destroy``` - removes resources created by locreg
+  - `registry`: Destroys the local container registry.
+  - `tunnel`: Destroys the public access tunnel.
+  - `cloud`: Destroys cloud resources (e.g., serverless instances).
+  - `all`: Destroys all resources, including registry, tunnel, and cloud resources.
+```  
+locreg destroy all
+locreg destroy registry
+  ```
 #### 📄 ```locreg``` concepts
 
 locreg uses ```locreg.yaml``` as a source of truth for development environment that it creates. Configuration should include a single registry backend, a single application backend and a single tunnel backend.
@@ -118,63 +176,3 @@ tags:                                  # Tags for the cloud resources
 ```
 
 Note that you should authenticate with ```az``` CLI in order to use Azure application backend: https://learn.microsoft.com/en-us/cli/azure/reference-index?view=azure-cli-latest#az-login
-
-
-## ```locreg``` installation
-
-Currently supported platforms include only Linux amd64. 
-We're planning to add MacOS ARM and Linux ARM support soon.
-There are several ways to install locreg:
-
-#### Go install
-
-With Go 1.16+, build and install the latest released version:
-
-```go install github.com/Uitware/locreg@latest```
-
-#### Bash script
-
-Use the following Bash script to install locreg from Github Releases:
-
-```
-curl -OL https://github.com/Uitware/locreg/releases/download/v0.1.0/locreg.tar.gz
-tar -zxvf locreg.tar.gz
-chmod +x locreg
-sudo mv locreg /usr/local/bin/locreg
-
-# to clean resources: 
-rm locreg.tar.gz
-```
-
-## ```locreg``` usage
-
-Use ```locreg --help``` to display usage info.
-
-Commands: 
-
-- ```deploy``` - creates a serverless container runtime resource with a specified cloud provider and deploys your application. Use this command with a provider (e.g., `azure`) and optionally specify an environment file using --env and the path to a .env file.
-```
-locreg deploy azure --env path/to/envfile
-```
-
-- ```push``` - build from the specified directory that contains Dockerfile for your container image and push the image to your local registry
-```
-locreg push path/to/dockerfile
-```
-- ```registry``` - start a local container registry
-```
-locreg registry
-```
-- ```tunnel``` - spin up a tunnel to expose local container registry to the public Internet
-```
-locreg tunnel
-```
-- ```destroy``` - removes resources created by locreg
-  - `registry`: Destroys the local container registry.
-  - `tunnel`: Destroys the public access tunnel.
-  - `cloud`: Destroys cloud resources (e.g., serverless instances).
-  - `all`: Destroys all resources, including registry, tunnel, and cloud resources.
-```  
-locreg destroy all
-locreg destroy registry
-  ```

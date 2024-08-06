@@ -72,7 +72,7 @@ locreg tunnel
 locreg destroy all
 locreg destroy registry
   ```
-#### 📄 ```locreg``` concepts
+## 📄 ```locreg``` concepts
 
 locreg uses ```locreg.yaml``` as a source of truth for development environment that it creates. Configuration should include a single registry backend, a single application backend and a single tunnel backend.
 

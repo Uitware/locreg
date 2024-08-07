@@ -2,6 +2,11 @@ module github.com/Uitware/locreg
 
 go 1.22.4
 
+retract (
+	v0.1.1
+	v0.1.0
+)
+
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.12.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.6.0

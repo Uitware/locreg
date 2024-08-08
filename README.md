@@ -28,7 +28,7 @@ There are several ways to install locreg:
 
 
 #### Prerequisites
-For locreg to work properly, you must have Docker installed on your machine.  
+For locreg to work properly, you must have Docker installed on your machine and Ngrok account created.  
 Additionally, if you plan to use locreg with Azure, ensure that the Azure CLI
 is installed and authenticated
 
@@ -43,7 +43,7 @@ With Go 1.22+, build and install the latest released version:
 Use the following Bash script to install locreg from Github Releases:
 
 ```
-curl -OL https://github.com/Uitware/locreg/releases/download/latest/locreg.tar.gz
+curl -OL https://github.com/Uitware/locreg/releases/latest/download/locreg.tar.gz
 tar -zxvf locreg.tar.gz
 chmod +x locreg
 sudo mv locreg /usr/local/bin/locreg

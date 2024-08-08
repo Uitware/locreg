@@ -11,7 +11,7 @@ go install github.com/Uitware/locreg@latest
 
 ### Using a bash script
 ```bash
-curl -OL https://github.com/Uitware/locreg/releases/download/v0.1.1-alpha/locreg.tar.gz
+curl -OL https://github.com/Uitware/locreg/releases/latest/download/locreg.tar.gz
 tar -zxvf locreg.tar.gz
 chmod +x locreg
 mv locreg /usr/local/bin/locreg

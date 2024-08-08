@@ -28,9 +28,12 @@ There are several ways to install locreg:
 
 
 #### Prerequisites
-For locreg to work properly, you must have Docker installed on your machine and Ngrok account created.  
-Additionally, if you plan to use locreg with Azure, ensure that the Azure CLI
-is installed and authenticated
+For locreg to work properly, you must have **Docker installed on your machine**
+you can do this by following [Docker documentation](https://docs.docker.com/engine/install/).
+Also, **Ngrok account must be created** you can do this in [Ngrok website](https://ngrok.com/).
+Additionally, if you plan to use locreg with Azure, ensure that the **Azure CLI
+is installed** and you have authenticated.
+Here you can find how to install it [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 
 #### Go install
 
@@ -55,6 +58,31 @@ rm locreg.tar.gz
 ## ```locreg``` usage
 
 Use ```locreg --help``` to display usage info.
+
+## Base scenario - local registry
+If you want to use `locreg` to create a local registry, and make it publicly available via Ngrok, you can use the following commands:
+First prepare locreg.yaml file with the following content:
+
+```yaml
+registry:
+  port: 8080
+  username: "locreg"
+  password: "locreg" # you can omit this then password will be auto generated
+
+image:
+  name: "sample-app" # set your desired image name 
+  tag: "latest"  # set your desired image tag
+
+tunnel:
+  provider:
+    ngrok:
+      name: my-locreg-test # you can set your desired name
+      port: 5050 # set your desired port
+      networkName: ngrok-network # set your desired network name
+```
+
+After that run command ``locreg registry`` - to start a local container registry and establish a ngrok tunnel for public access.
+Now your registry is set up, and you can push your image to it with `locreg push .` command.
 
 Commands: 
 

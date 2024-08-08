@@ -61,7 +61,8 @@ Use ```locreg --help``` to display usage info.
 
 ## Base scenario - local registry
 If you want to use `locreg` to create a local registry, and make it publicly available via Ngrok, you can use the following commands:
-First prepare locreg.yaml file with the following content:
+First prepare locreg.yaml file that is stored in same directory as your Docker file or where your project is located
+with the following content:
 
 ```yaml
 registry:

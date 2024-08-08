@@ -12,7 +12,13 @@ Serverless container runtimes like AWS ECS, Azure App Service for Containers, GC
 
  **Your application is up and running on a cloud serverless platform! 🎉** Now you can easily **rebuild** and **redeploy** your application using ```locreg```, and **when the testing is done - easily destroy both local and cloud resources via ```locreg```**!
 
-All configuration is defined and controlled via single ```locreg.yaml``` file - please see ```config_example.yaml``` in the repo root. 
+All configuration is defined and controlled via single ```locreg.yaml``` file - please see ```config_example.yaml``` in the repo root.   
+
+
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://uitware.github.io/locreg/)
+[![Godoc](https://pkg.go.dev/badge/github.com/Uitware/locreg?utm_source=godoc)](https://pkg.go.dev/github.com/Uitware/locreg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Uitware/locreg)](https://goreportcard.com/report/github.com/Uitware/locreg)
+[![Tests on Linux](https://github.com/Uitware/locreg/actions/workflows/binary-build.yml/badge.svg)](https://github.com/Uitware/locreg/actions/workflows/binary-build.yml)
 
 ## ```locreg``` installation
 
@@ -20,9 +26,15 @@ Currently supported platforms include only Linux amd64.
 We're planning to add MacOS ARM and Linux ARM support soon.
 There are several ways to install locreg:
 
+
+#### Prerequisites
+For locreg to work properly, you must have Docker installed on your machine and Ngrok account created.  
+Additionally, if you plan to use locreg with Azure, ensure that the Azure CLI
+is installed and authenticated
+
 #### Go install
 
-With Go 1.16+, build and install the latest released version:
+With Go 1.22+, build and install the latest released version:
 
 ```go install github.com/Uitware/locreg@latest```
 
@@ -31,12 +43,12 @@ With Go 1.16+, build and install the latest released version:
 Use the following Bash script to install locreg from Github Releases:
 
 ```
-curl -OL https://github.com/Uitware/locreg/releases/download/v0.1.0/locreg.tar.gz
+curl -OL https://github.com/Uitware/locreg/releases/latest/download/locreg.tar.gz
 tar -zxvf locreg.tar.gz
 chmod +x locreg
 sudo mv locreg /usr/local/bin/locreg
 
-# to clean resources: 
+# remove tarball after installation: 
 rm locreg.tar.gz
 ```
 
@@ -176,3 +188,6 @@ tags:                                  # Tags for the cloud resources
 ```
 
 Note that you should authenticate with ```az``` CLI in order to use Azure application backend: https://learn.microsoft.com/en-us/cli/azure/reference-index?view=azure-cli-latest#az-login
+
+## 📦 ```locreg``` Docs
+Read detailed documentation on how to use ```locreg``` in here - [docs](https://uitware.github.io/locreg/)

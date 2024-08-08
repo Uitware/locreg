@@ -29,8 +29,8 @@ There are several ways to install locreg:
 
 #### Prerequisites
 For locreg to work properly, you must have Docker installed on your machine.  
-And if you're going to use it to host containers in Azure cloud, you should have
-Azure CLI installed and authenticated also.
+Additionally, if you plan to use locreg with Azure, ensure that the Azure CLI
+is installed and authenticated
 
 #### Go install
 

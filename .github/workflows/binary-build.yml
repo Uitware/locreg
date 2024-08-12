@@ -23,6 +23,11 @@ jobs:
       with:
         creds: '${{ secrets.AZURE_CREDENTIALS }}'
 
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: v1.59
+
     - name: Test
       env:
         NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN_FOR_CI_TESTS }}

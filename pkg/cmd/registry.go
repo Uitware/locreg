@@ -41,7 +41,7 @@ var registryCmd = &cobra.Command{
 		if err := local_registry.InitCommand(configFilePath); err != nil {
 			err := ngrok.DestroyTunnel()
 			if err != nil {
-				log.Fatalf("❌ error destroying tunnel: %v. \nYou need to do this manualy", err)
+				log.Fatalf("❌ error destroying tunnel: %v. \nYou need to do this manually", err)
 			}
 			log.Fatalf("❌ error running registry: %v", err)
 		}

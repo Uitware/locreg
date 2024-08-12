@@ -23,7 +23,6 @@ func DestroyTunnel() error {
 	err = local_registry.StopAndRemoveContainer(profile.Tunnel.ContainerID)
 	if err != nil {
 		return fmt.Errorf("❌ failed to stop or remove tunnel container: %w", err)
-
 	}
 	log.Printf("❌ Tunnel container with container ID %s terminated", profile.Tunnel.ContainerID)
 

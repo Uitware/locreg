@@ -53,8 +53,8 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 		},
 	}
 
-	networkId := getNetworkId(dockerClient, config.Tunnel.Provider.Ngrok.NetworkName)
-	if networkId == "" {
+	networkID := getNetworkID(dockerClient, config.Tunnel.Provider.Ngrok.NetworkName)
+	if networkID == "" {
 		netResp, err := dockerClient.NetworkCreate(
 			context.Background(),
 			config.Tunnel.Provider.Ngrok.NetworkName,
@@ -63,7 +63,7 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 		if err != nil {
 			log.Fatalf("❌ failed to create network: %v", err)
 		}
-		networkId = netResp.ID
+		networkID = netResp.ID
 	}
 	// Create container
 	imagePuller, err := dockerClient.ImagePull(ctx, containerImage, image.PullOptions{})
@@ -95,7 +95,7 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 		},
 		&network.NetworkingConfig{
 			EndpointsConfig: map[string]*network.EndpointSettings{
-				networkId: {},
+				networkID: {},
 			},
 		},
 		nil,
@@ -116,7 +116,7 @@ func RunNgrokTunnelContainer(config *parser.Config) {
 }
 
 // writeToProfile writes the container ID and credentials to the profile file in TOML format
-func writeToProfile(dockerId string, port string) error {
+func writeToProfile(dockerID string, port string) error {
 	var tunnelsResponse Tunnels
 	var resp *http.Response
 	profilePath, err := parser.GetProfilePath()
@@ -138,11 +138,11 @@ func writeToProfile(dockerId string, port string) error {
 	}
 	err = json.NewDecoder(resp.Body).Decode(&tunnelsResponse)
 	if err != nil {
-		return fmt.Errorf("❌ failed to decode response body: %v", err)
+		return fmt.Errorf("❌ failed to decode response body: %w", err)
 	}
 	// write to profile
 	profile.Tunnel = &parser.Tunnel{
-		ContainerID: dockerId,
+		ContainerID: dockerID,
 		URL:         tunnelsResponse.Tunnels[0].PublicURL,
 	}
 	if err := parser.SaveProfile(profile, profilePath); err != nil {
@@ -151,7 +151,7 @@ func writeToProfile(dockerId string, port string) error {
 	return nil
 }
 
-func getNetworkId(dockerClient *client.Client, networkName string) string {
+func getNetworkID(dockerClient *client.Client, networkName string) string {
 	resp, err := dockerClient.NetworkList(
 		context.Background(),
 		network.ListOptions{

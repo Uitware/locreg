@@ -27,7 +27,10 @@ var destroyCmd = &cobra.Command{
 		switch resource {
 		case "registry":
 			if profile.LocalRegistry != nil {
-				local_registry.DestroyLocalRegistry()
+				err := local_registry.DestroyLocalRegistry()
+				if err != nil {
+					log.Fatalf("❌ Error destroying local registry: %v", err)
+				}
 				profile.LocalRegistry = nil
 				saveProfile(profile, profilePath)
 				fmt.Println("✅ Registry destroyed successfully")
@@ -35,7 +38,10 @@ var destroyCmd = &cobra.Command{
 
 		case "tunnel":
 			if profile.Tunnel != nil {
-				ngrok.DestroyTunnel()
+				err := ngrok.DestroyTunnel()
+				if err != nil {
+					log.Fatalf("❌ Error destroying tunnel: %v", err)
+				}
 				profile.Tunnel = nil
 				saveProfile(profile, profilePath)
 				fmt.Println("✅ Tunnel destroyed successfully")
@@ -66,14 +72,20 @@ func init() {
 // destroyAllResources destroys all resources defined in the profile.
 func destroyAllResources(profile *parser.Profile, profilePath string) {
 	if profile.LocalRegistry != nil {
-		local_registry.DestroyLocalRegistry()
+		err := local_registry.DestroyLocalRegistry()
+		if err != nil {
+			log.Fatalf("❌ Error destroying local registry: %v", err)
+		}
 		profile.LocalRegistry = nil
 		saveProfile(profile, profilePath)
 		fmt.Println("✅ Registry destroyed successfully")
 	}
 
 	if profile.Tunnel != nil {
-		ngrok.DestroyTunnel()
+		err := ngrok.DestroyTunnel()
+		if err != nil {
+			log.Fatalf("❌ Error destroying tunnel: %v", err)
+		}
 		profile.Tunnel = nil
 		saveProfile(profile, profilePath)
 		fmt.Println("✅ Tunnel destroyed successfully")

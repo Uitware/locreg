@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -57,23 +58,25 @@ auth:
 	// iterate through the tar archive to find the config file if EOF reached stops use to remove header
 	for {
 		header, err := tarReader.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break // End of archive
 		}
 		if err != nil {
-			return fmt.Errorf("❌ error reading tar file: %v", err)
+			return fmt.Errorf("❌ error reading tar file: %w", err)
 		}
 		if header.Name == "config.yml" {
 			yamlBytes, err = io.ReadAll(tarReader)
 			if err != nil {
-				return fmt.Errorf("❌ error reading config.yml: %v", err)
+				return fmt.Errorf("❌ error reading config.yml: %w", err)
 			}
 			break
 		}
 	}
 	// May use structs instead of this string manipulation
 	configTarBuffer, err := prepareTar(string(yamlBytes)+configUpdates, "config.yml")
-
+	if err != nil {
+		return fmt.Errorf("❌ failed copy to tar file into container: %w", err)
+	}
 	// Write config back to	container
 	err = dockerClient.CopyToContainer(
 		ctx,
@@ -131,14 +134,16 @@ func prepareCreds(username, password string) *bytes.Buffer {
 	// Password configuration for registry should be hashed using bcrypt
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Fatal("❌ failed to hash password: %w", err)
+		log.Fatalf("❌ failed to hash password: %v", err)
 	}
 	credsTarBuffer, err := prepareTar(
 		fmt.Sprintf("%s:%s\n", username, hashedPassword),
 		"htpasswd",
 	)
+	if err != nil {
+		log.Fatalf("❌ failed to prepare tar file: %v", err)
+	}
 	return credsTarBuffer
-
 }
 
 // prepareTar creates a tar archive with the htpasswd file data inside it stored in same way as htpasswd -Bnb command does

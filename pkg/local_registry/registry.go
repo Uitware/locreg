@@ -51,7 +51,7 @@ func runRegistry(dockerClient *client.Client, ctx context.Context, config *parse
 		},
 		&network.NetworkingConfig{
 			EndpointsConfig: map[string]*network.EndpointSettings{
-				getNetworkId(dockerClient, config.Tunnel.Provider.Ngrok.NetworkName): {}, // connect container to ngrok network os it can be tunneled
+				getNetworkID(dockerClient, config.Tunnel.Provider.Ngrok.NetworkName): {}, // connect container to ngrok network os it can be tunneled
 			},
 		},
 		nil,
@@ -89,7 +89,7 @@ func errorCleanup(containerID string, err *error) {
 	if errDestroy := DestroyLocalRegistry(); errDestroy != nil {
 		cleanupErr := StopAndRemoveContainer(containerID)
 		if cleanupErr != nil {
-			log.Fatalf("❌ Failed to remove container: %v. You will need to do this manualy", cleanupErr)
+			log.Fatalf("❌ Failed to remove container: %v. You will need to do this manually", cleanupErr)
 		}
 	}
 }
@@ -122,7 +122,7 @@ func RotateCommand(configFilePath string) error {
 	return RotateCreds(cli, ctx, config.Registry.Username, config.Registry.Password, config.Registry.Name)
 }
 
-func getNetworkId(dockerClient *client.Client, networkName string) string {
+func getNetworkID(dockerClient *client.Client, networkName string) string {
 	// retrieve network ID that was created for ngrok tunnel if it exists
 	resp, err := dockerClient.NetworkList(
 		context.Background(),

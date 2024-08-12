@@ -57,7 +57,10 @@ func Deploy(azureConfig *parser.Config, envVars map[string]string) {
 	}
 	tunnelURL := strings.TrimPrefix(profile.Tunnel.URL, "https://")
 
-	checkTunnelURLValidity(tunnelURL)
+	err = checkTunnelURLValidity(tunnelURL)
+	if err != nil {
+		log.Fatalf("❌ Failed to check tunnel URL validity: %v", err)
+	}
 	// Get the Azure subscription ID
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
@@ -95,7 +98,6 @@ func Deploy(azureConfig *parser.Config, envVars map[string]string) {
 		DeployAppService(ctx, azureConfig, tunnelURL, envVars)
 	} else if azureConfig.IsContainerInstanceSet() {
 		DeployACI(ctx, azureConfig, tunnelURL, envVars)
-
 	} else {
 		log.Fatal("❌ No valid deployment configuration found.")
 	}
@@ -149,9 +151,14 @@ func checkTunnelURLValidity(tunnelURL string) error {
 
 		// Make an HTTP GET request to the tunnel URL
 		checkURL := fmt.Sprintf("https://%s", tunnelURL)
-		resp, err := http.Get(checkURL)
+		req, err := http.NewRequest(http.MethodGet, checkURL, nil)
 		if err != nil {
-			log.Printf("❌ Error checking tunnel URL %s: %v", checkURL, err)
+			log.Printf("❌ Error creating request %s: %v", checkURL, err)
+			return err
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Println("❌ Error making request to tunnel URL, retrying...")
 			return err
 		}
 		defer resp.Body.Close()

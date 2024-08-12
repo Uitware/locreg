@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -28,7 +29,6 @@ func getProjectRoot() string {
 
 // openDummyPort runs dummy registry
 func openDummyPort(t *testing.T) {
-
 	listener, err := net.Listen(
 		"tcp",
 		fmt.Sprintf("%s:%s", "127.0.0.1", strconv.Itoa(getConfig(t).Registry.Port))) // Listen on any available port
@@ -36,13 +36,14 @@ func openDummyPort(t *testing.T) {
 		t.Fatalf("Failed to open dummy port: %v", err)
 	}
 
-	go http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-
-	t.Cleanup(func() {
-		listener.Close()
-	})
+	go func() {
+		err := http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 }
 
 // ConfigAndProfile returns config
@@ -118,7 +119,7 @@ func TestRunNgrokTunnelContainer(t *testing.T) {
 func TestRunNgrokTunnelEnvVariables(t *testing.T) {
 	t.Setenv("NGROK_AUTHTOKEN", "")
 	if validateNgrokAuthtokens() {
-		t.Fatalf("❌ NGROK_AUTHTOKEN is not being validated for beeing empty")
+		t.Fatalf("❌ NGROK_AUTHTOKEN is not being validated for being empty")
 	} else {
 		t.Log("✅ NGROK_AUTHTOKEN is validated")
 	}

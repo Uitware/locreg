@@ -177,5 +177,4 @@ func TestContainerErrorCleanUp(t *testing.T) {
 	} else {
 		t.Fatalf("❌ container still exists after cleanup")
 	}
-
 }

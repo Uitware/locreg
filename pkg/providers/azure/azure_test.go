@@ -25,6 +25,7 @@ func getProjectRoot() string {
 	dir = filepath.Join(dir, "..", "..", "..")
 	return dir
 }
+
 func generateRandomString(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 	var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -112,11 +113,9 @@ func TestDeployAppService(t *testing.T) {
 			log.Println("Web App ID:", *appService.ID)
 		}
 	})
-
 }
 
 func TestDeployContainerInstance(t *testing.T) {
-
 	config, err := parser.LoadConfig(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "locreg_aci.yaml"))
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
@@ -157,11 +156,9 @@ func TestDeployContainerInstance(t *testing.T) {
 			log.Println("ACI created:", *aci.ID)
 		}
 	})
-
 }
 
 func TestCleanupResources(t *testing.T) {
-
 	// Test cleanup function independently
 	ctx := context.Background()
 

@@ -61,7 +61,7 @@ type Config struct {
 					Name          string `mapstructure:"name" default:"locreg-container"`
 					OsType        string `mapstructure:"osType" default:"Linux"`
 					RestartPolicy string `mapstructure:"restartPolicy" default:"Always"`
-					IpAddress     struct {
+					IPAddress     struct {
 						Type  string     `mapstructure:"type" default:"Public"`
 						Ports []struct { // should be set to default dynamically because it is a slice of structs
 							Port     int    `mapstructure:"port"`
@@ -70,7 +70,7 @@ type Config struct {
 					} `mapstructure:"ipAddress"`
 					Resources struct {
 						Requests struct {
-							Cpu    float64 `mapstructure:"cpu" default:"1.0"`
+							CPU    float64 `mapstructure:"cpu" default:"1.0"`
 							Memory float64 `mapstructure:"memory" default:"1.5"`
 						} `mapstructure:"requests"`
 					} `mapstructure:"resources"`
@@ -86,7 +86,7 @@ func LoadConfig(filePath string) (*Config, error) {
 	viper.SetConfigType("yaml")
 
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("❌ error reading config file: %v", err)
+		return nil, fmt.Errorf("❌ error reading config file: %w", err)
 	}
 
 	setDynamicDefaults()
@@ -94,7 +94,7 @@ func LoadConfig(filePath string) (*Config, error) {
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("❌ error unmarshaling config file: %v", err)
+		return nil, fmt.Errorf("❌ error unmarshaling config file: %w", err)
 	}
 
 	if config.Tags == nil {
@@ -176,11 +176,6 @@ func getGitSHA() string {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	output, err := cmd.Output()
 	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			if exitError.ExitCode() == 128 {
-				return "latest"
-			}
-		}
 		return "latest"
 	}
 	return strings.TrimSpace(string(output))

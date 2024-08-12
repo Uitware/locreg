@@ -96,7 +96,6 @@ func Destroy() {
 				log.Println("✅ Resource group deleted:", profile.CloudResource.ContainerInstance.ResourceGroupName)
 			}
 		}
-
 	}
 }
 

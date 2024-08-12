@@ -13,7 +13,6 @@ import (
 
 // DeployACI handles the deployment of an Azure Container Instance
 func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string, envVars map[string]string) {
-
 	subscriptionID, err := getSubscriptionID()
 	if err != nil {
 		log.Fatal(err)
@@ -75,12 +74,12 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 						Image: to.Ptr(fmt.Sprintf("%s/%s:%s", tunnelURL, imageConfig.Name, imageConfig.Tag)),
 						Ports: []*armcontainerinstance.ContainerPort{
 							{
-								Port: to.Ptr(int32(containerConfig.IpAddress.Ports[0].Port)),
+								Port: to.Ptr(int32(containerConfig.IPAddress.Ports[0].Port)),
 							},
 						},
 						Resources: &armcontainerinstance.ResourceRequirements{
 							Requests: &armcontainerinstance.ResourceRequests{
-								CPU:        to.Ptr[float64](containerConfig.Resources.Requests.Cpu),
+								CPU:        to.Ptr[float64](containerConfig.Resources.Requests.CPU),
 								MemoryInGB: to.Ptr[float64](containerConfig.Resources.Requests.Memory),
 							},
 						},
@@ -91,11 +90,11 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 			OSType:        to.Ptr(armcontainerinstance.OperatingSystemTypes(containerConfig.OsType)),
 			RestartPolicy: to.Ptr(armcontainerinstance.ContainerGroupRestartPolicy(containerConfig.RestartPolicy)),
 			IPAddress: &armcontainerinstance.IPAddress{
-				Type: to.Ptr(armcontainerinstance.ContainerGroupIPAddressType(containerConfig.IpAddress.Type)),
+				Type: to.Ptr(armcontainerinstance.ContainerGroupIPAddressType(containerConfig.IPAddress.Type)),
 				Ports: []*armcontainerinstance.Port{
 					{
-						Port:     to.Ptr(int32(containerConfig.IpAddress.Ports[0].Port)),
-						Protocol: to.Ptr(armcontainerinstance.ContainerGroupNetworkProtocol(containerConfig.IpAddress.Ports[0].Protocol)),
+						Port:     to.Ptr(int32(containerConfig.IPAddress.Ports[0].Port)),
+						Protocol: to.Ptr(armcontainerinstance.ContainerGroupNetworkProtocol(containerConfig.IPAddress.Ports[0].Protocol)),
 					},
 				},
 			},

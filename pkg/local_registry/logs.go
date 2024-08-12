@@ -50,8 +50,7 @@ func PrintLog(rd io.Reader) error {
 			continue // skip invalid json
 		}
 		if lg := strings.Trim(GetNonNilFields(logString), "\n"); lg != "" {
-			log.Printf(lg)
-
+			log.Print(lg)
 		}
 	}
 

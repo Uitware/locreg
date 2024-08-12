@@ -4,13 +4,13 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - pkg/**
-      - main.go
+      - 'pkg/**'
+      - 'main.go'
   pull_request:
     branches: [ "main" ]
     paths:
-      - pkg/**
-      - main.go
+      - 'pkg/**'
+      - 'main.go'
 
 jobs:
 

@@ -1,7 +1,11 @@
 name: Deploy MkDocs site to GitHub Pages
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
 
 jobs:
   deploy:

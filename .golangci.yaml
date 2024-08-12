@@ -1,0 +1,36 @@
+run:
+  timeout: 10m
+
+output:
+  formats:
+    - format: colored-line-number
+  sort-order:
+    - linter
+    - severity
+  sort-results: true
+  show-stats: true
+
+
+linters:
+  enable:
+    - gosec
+    - gofmt
+    - staticcheck
+    - unused
+    - govet
+    - whitespace
+    - misspell
+    - stylecheck
+    - errorlint
+    - importas
+    - prealloc
+    - stylecheck
+    - tparallel
+
+issues:
+  exclude-rules:
+    - path: test
+      linters:
+        - gosec
+  exclude:
+    - ST1003 # Used to prevent renaming of pkg that use _ in their name (e.g. local_registry)

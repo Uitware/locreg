@@ -28,9 +28,12 @@ There are several ways to install locreg:
 
 
 #### Prerequisites
-For locreg to work properly, you must have Docker installed on your machine and Ngrok account created.  
-Additionally, if you plan to use locreg with Azure, ensure that the Azure CLI
-is installed and authenticated
+For locreg to work properly, you must have **Docker installed on your machine**
+you can do this by following [Docker documentation](https://docs.docker.com/engine/install/).
+Also, **Ngrok account must be created** you can do this in [Ngrok website](https://ngrok.com/).
+Additionally, if you plan to use locreg with Azure, ensure that the **Azure CLI
+is installed** and you have authenticated.
+Here you can find how to install it [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 
 #### Go install
 
@@ -55,6 +58,33 @@ rm locreg.tar.gz
 ## ```locreg``` usage
 
 Use ```locreg --help``` to display usage info.
+
+## Base scenario - local registry
+If you want to use `locreg` to create a local registry, and make it publicly available via Ngrok, you can use the following commands:
+First prepare locreg.yaml file that is stored in same directory as your Docker file or where your project is located
+with the following content:
+
+```yaml
+registry:
+  port: 8080 # If omitted, default value 5000 will be assigned.
+  username: "locreg" # If omitted, a randomly generated value will be assigned.
+  password: "locreg" # If omitted, a randomly generated value will be assigned.
+
+image:
+  name: "sample-app" # Set your desired image name, if omitted, default value locreg-built-image will be assigned.
+  tag: "latest"  # Set your desired image tag, if omitted, it will be set to your latest commit SHA, if no .git folder then it will be set to "latest".
+
+tunnel:
+  provider:
+    ngrok:
+      name: my-locreg-test # Set your desired name, if omitted, default value locreg-ngrok will be assigned.
+      port: 5050 # Set your desired port number, if omitted, default value 4040 will be assigned.
+      networkName: ngrok-network # Set your desired network name, if omitted, default value locreg-ngrok will be assigned.
+```
+> If you want better understanding of default values, then read - [locreg.yaml configuration options in docs](https://uitware.github.io/locreg/configuration/)
+
+After that run command ``locreg registry`` - to start a local container registry and establish a ngrok tunnel for public access.
+Now your registry is set up, and you can push your image to it with `locreg push .` command.
 
 Commands: 
 
@@ -92,12 +122,12 @@ locreg uses ```locreg.yaml``` as a source of truth for development environment t
 
 ```
 registry:
-  port: 5555              # Port on which the local registry will run
-  tag: "2"                # Tag for the Docker registry image
-  image: "registry"       # Docker image to use for the local registry
-  name: "my-registry"     # Name for the local registry container
-  username: "myUsername"  # Username for accessing the registry
-  password: "myPassword"  # Password for accessing the registry
+  port: 5555 # Port on which the local registry will run, if omitted, default value 5000 will be assigned.
+  tag: "2" # Tag for the Docker registry image, if omitted, default value 2 will be assigned.
+  image: "registry" # Docker image to use for the local registry, if omitted, default value registry will be assigned.
+  name: "my-registry" # Name for the local registry container, if omitted, default value locreg-registry will be assigned.
+  username: "myUsername" # Username for accessing the registry, if omitted, a randomly generated value will be assigned.
+  password: "myPassword" # Password for accessing the registry, if omitted, a randomly generated value will be assigned.
 ```
 
 🖼️ Image configuration
@@ -105,8 +135,8 @@ defines the name and tag for the Docker image that will be built and deployed.
 
 ```
 image:
-  name: "locreg-app"   # Name of the Docker image to build and deploy
-  tag: "latest"        # Tag for the Docker image (e.g., latest, v1.0.0)
+  name: "locreg-app" # Name of the Docker image to build and deploy, if omitted, default value locreg-built-image will be assigned.
+  tag: "latest" # Tag for the Docker image (e.g., latest, v1.0.0), if omitted, it will be set to your latest commit SHA, if git is not initialised then it will be set to "latest".
 ```
 
 🌐 Tunnel backend configuratio (Ngrok by default)
@@ -115,10 +145,9 @@ image:
 tunnel:
   provider:
     ngrok:
-      name: "my-locreg-test"        # Name for the Ngrok tunnel instance
-      port: 5050                    # Port on which the Ngrok tunnel will run
-      networkName: "ngrok-network"  # Name of the Docker network to which the Ngrok tunnel container will connect
-
+      name: "my-locreg-test" # Name for the Ngrok tunnel instance, if omitted, default value locreg-ngrok will be assigned.
+      port: 5050 # Port on which the Ngrok tunnel will run, if omitted, default value 4040 will be assigned.
+      networkName: "ngrok-network" # Name of the Docker network to which the Ngrok tunnel container will connect, if omitted, default value locreg-ngrok will be assigned.
 ```
 
 Note that you should export ```NGROK_AUTHTOKEN``` in order to use Ngrok tunnel backend: 
@@ -132,28 +161,26 @@ Note that you should export ```NGROK_AUTHTOKEN``` in order to use Ngrok tunnel b
 deploy:
   provider:
     azure:
-      location: "East US"                       # Azure location for the resources
-      resourceGroup: "LocregResourceGroup"      # Name of the Azure resource group
+      location: "East US" # Azure location for the resources, if omitted, default value eastus will be assigned.
+      resourceGroup: "LocregResourceGroup" # Name of the Azure resource group, if omitted, default value LocregResourceGroup will be assigned.
       appServicePlan:
-        name: "LocregAppServicePlan"            # Name of the App Service Plan
+        name: "LocregAppServicePlan" # Name of the App Service Plan, if omitted, default value LocregAppServicePlan will be assigned.
         sku:
-          name: "B1"                            # Pricing tier (SKU) for the App Service Plan
-          capacity: 1                           # Capacity of the plan (number of instances)
+          name: "B1" # Pricing tier (SKU) for the App Service Plan, if omitted, default value F1 will be assigned.
+          capacity: 1 # Capacity of the plan (number of instances), if omitted, default value 1 will be assigned.
         planProperties:
-          reserved: true                        # Indicates if the plan should use a reserved instance (for Linux)
+          reserved: true # Indicates if the plan should use a reserved instance (for Linux), if omitted, default value true will be assigned.
       appService:
-        name: "LocregAppService1112233"         # Name of the App Service
+        name: "LocregAppService1112233" # Name of the App Service, if omitted, a randomly generated value will be assigned.
         siteConfig:
-          alwaysOn: true                        # Keeps the app always running
-tags:                                           # Tags for the cloud resources                   
+          alwaysOn: true # Keeps the app always running, if omitted, default value false will be assigned.
+tags: # Tags for the cloud resources                   
   locreg-version: "0.1.0"
   test: "test"
 
 # By default, locreg tags all resources as managed-by: locreg
-# If you want to turn off the tags (which is not recommended), you can set it to `false`` like in example below
+# If you want to turn off the tags (which is not recommended), you can set it to `false` like in example below
 #tags: false
-
-
 ```
 
 ☁️ Azure Container Instance:
@@ -162,28 +189,28 @@ tags:                                           # Tags for the cloud resources
 deploy:
   provider:
     azure:
-      location: "Poland Central"       # Azure location for the resources
-      resourceGroup: "rg_locreg"       # Name of the Azure resource group
+      location: "Poland Central" # Azure location for the resources, if omitted, default value eastus will be assigned.
+      resourceGroup: "rg_locreg" # Name of the Azure resource group, if omitted, default value LocregResourceGroup will be assigned.
       containerInstance:
-        name: "weatherappcontainer"    # Name of the Container Instance
-        osType: "Linux"                # Operating system type (e.g., Linux)
-        restartPolicy: "OnFailure"     # Restart policy for the container (e.g., Always, OnFailure)
+        name: "weatherappcontainer" # Name of the Container Instance, if omitted, default value locreg-container will be assigned.
+        osType: "Linux" # Operating system type (e.g., Linux), if omitted, default value Linux will be assigned.
+        restartPolicy: "OnFailure" # Restart policy for the container (e.g., Always, OnFailure), if omitted, default value Always will be assigned.
         ipAddress:
-          type: "Public"               # Type of IP address (e.g., Public, Private)
+          type: "Public" # Type of IP address (e.g., Public, Private), if omitted, default value Public will be assigned.
           ports:
-            - port: 80                 # Port to expose
-              protocol: "TCP"          # Protocol for the exposed port (e.g., TCP, UDP)
+            - port: 80 # Port to expose, if omitted, default value 80 will be assigned.
+              protocol: "TCP" # Protocol for the exposed port (e.g., TCP, UDP), if omitted, default value TCP will be assigned.
         resources:
           requests:
-            cpu: 1.0                   # Number of CPUs allocated
-            memory: 1.5                # Amount of memory allocated (in GB)
+            cpu: 1.0 # Number of CPUs allocated, if omitted, default value 1.0 will be assigned.
+            memory: 1.5 # Amount of memory allocated (in GB), if omitted, default value 1.5 will be assigned.
 
-tags:                                  # Tags for the cloud resources                   
+tags: # Tags for the cloud resources                   
   locreg-version: "0.1.0"
   test: "test"
 
 # By default, locreg tags all resources as managed-by: locreg
-# If you want to turn off the tags (which is not recommended), you can set it to `false`` like in example below
+# If you want to turn off the tags (which is not recommended), you can set it to `false` like in example below
 #tags: false
 ```
 

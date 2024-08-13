@@ -53,6 +53,7 @@ func DeployAppService(ctx context.Context, azureConfig *parser.Config, tunnelURL
 	} else {
 		tracker.WebApp = azureConfig.Deploy.Provider.Azure.AppService.Name
 		log.Println("✅ App service created:", *appService.ID)
+		log.Println("🌐 Web App URL:", "https://", *appService.Properties.DefaultHostName)
 	}
 	// Write deployment information to the profile
 	err = writeProfileAppService(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.AppServicePlan.Name, azureConfig.Deploy.Provider.Azure.AppService.Name)

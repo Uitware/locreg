@@ -3,12 +3,12 @@ package azure
 import (
 	"context"
 	"fmt"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerinstance/armcontainerinstance/v2"
 	"github.com/Uitware/locreg/pkg/parser"
 	"log"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerinstance/armcontainerinstance/v2"
+	"strconv"
 )
 
 // DeployACI handles the deployment of an Azure Container Instance
@@ -41,12 +41,12 @@ func DeployACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 	} else {
 		tracker.ContainterInstance = azureConfig.Deploy.Provider.Azure.ContainerInstance.Name
 		log.Println("✅ Deployment completed successfully.", *containerInstance.Name)
-	}
 
-	err = writeProfileContainerInstance(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.ContainerInstance.Name)
-	if err != nil {
-		cleanupResources(ctx, tracker)
-		log.Fatal(err)
+		err = writeProfileContainerInstance(azureConfig.Deploy.Provider.Azure.ResourceGroup, azureConfig.Deploy.Provider.Azure.ContainerInstance.Name)
+		if err != nil {
+			cleanupResources(ctx, tracker)
+			log.Fatal(err)
+		}
 	}
 }
 
@@ -120,6 +120,7 @@ func createACI(ctx context.Context, azureConfig *parser.Config, tunnelURL string
 	}
 
 	log.Println("✅ Azure Container Instance created:", *resp.ID)
+	log.Println("🌐 Web App URL:", "http://"+*resp.Properties.IPAddress.IP+":"+strconv.Itoa(int(*resp.Properties.IPAddress.Ports[0].Port)))
 	return &resp.ContainerGroup, nil
 }
 

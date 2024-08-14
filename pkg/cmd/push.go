@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/Uitware/locreg/pkg/local_registry"
+	"github.com/Uitware/locreg/pkg/parser"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -15,12 +17,14 @@ var pushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		dir := args[0]
 		configFilePath := "locreg.yaml"
+		profile, _ := parser.LoadProfileData()
 		err := local_registry.BuildCommand(configFilePath, dir)
 		if err != nil {
 			fmt.Println("❌ Error building and pushing image:", err)
 		} else {
 			fmt.Println("✅ Image successfully built and pushed.")
 		}
+		log.Print("Registry URL where image is located: ", profile.GetTunnelURL())
 	},
 }
 

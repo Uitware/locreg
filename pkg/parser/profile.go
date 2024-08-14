@@ -99,3 +99,10 @@ func LoadProfileData() (*Profile, string) {
 	}
 	return profile, profilePath
 }
+
+func (p *Profile) GetTunnelURL() string {
+	if p.Tunnel == nil {
+		log.Fatalf("❌ Tunnel does not exist")
+	}
+	return p.Tunnel.URL
+}

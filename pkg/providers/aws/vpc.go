@@ -2,11 +2,13 @@ package aws
 
 import (
 	"context"
+	"github.com/Uitware/locreg/pkg/parser"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"log"
 	"strings"
+	"time"
 )
 
 type VpcClient struct {
@@ -17,7 +19,7 @@ type VpcClient struct {
 // For containers that use the Fargate launch type.
 //
 // return: vpcId
-func (vpcClient VpcClient) createVpcForFargate(ctx context.Context) *string {
+func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *parser.Profile) *string {
 	resp, err := vpcClient.client.CreateVpc(
 		ctx,
 		&ec2.CreateVpcInput{
@@ -27,6 +29,8 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context) *string {
 	if err != nil {
 		log.Fatal("failed to create VPC, " + err.Error())
 	}
+	profile.AWSCloudResource.VPCId = *resp.Vpc.VpcId
+	profile.Save()
 
 	// Get a default security group to configure it
 	// inbound and outbound rules
@@ -70,8 +74,8 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context) *string {
 
 // createPublicSubnet creates a public subnet in the VPC
 // For containers that use the Fargate launch type
-func (vpcClient VpcClient) createPublicSubnet(ctx context.Context) string {
-	vpcId := vpcClient.createVpcForFargate(ctx)
+func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *parser.Profile) string {
+	vpcId := vpcClient.createVpcForFargate(ctx, profile)
 	subnet, err := vpcClient.client.CreateSubnet(
 		ctx,
 		&ec2.CreateSubnetInput{
@@ -82,6 +86,9 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context) string {
 	if err != nil {
 		log.Fatal("failed to create subnet, " + err.Error())
 	}
+	profile.AWSCloudResource.SubnetId = *subnet.Subnet.SubnetId
+	profile.Save()
+
 	internetGateway, err := vpcClient.client.CreateInternetGateway(
 		ctx,
 		&ec2.CreateInternetGatewayInput{
@@ -90,6 +97,8 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context) string {
 	if err != nil {
 		log.Fatal("failed to create internet gateway, " + err.Error())
 	}
+	profile.AWSCloudResource.InternetGatewayId = *internetGateway.InternetGateway.InternetGatewayId
+	profile.Save()
 
 	routeTable, err := vpcClient.client.CreateRouteTable(
 		ctx,
@@ -100,6 +109,8 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context) string {
 	if err != nil {
 		log.Fatal("failed to create route table, " + err.Error())
 	}
+	profile.AWSCloudResource.RouteTableId = *routeTable.RouteTable.RouteTableId
+	profile.Save()
 
 	// First you need to attach the internet gateway to the VPC
 	// only then you cat associate it with the route table
@@ -149,6 +160,63 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context) string {
 	return *subnet.Subnet.SubnetId
 }
 
+// deregisterAndDeleteFromVPC deregister and deletes Internet Gateway, RouteTable and Subnet from VPC
+// that specified in the profile
+func (vpcClient VpcClient) deregisterAndDeleteFromVPC(ctx context.Context, profile *parser.Profile) {
+	// internetGateway
+	retryOnError(5, 5, func() error {
+		_, err := vpcClient.client.DetachInternetGateway(
+			ctx,
+			&ec2.DetachInternetGatewayInput{
+				VpcId:             aws.String(profile.AWSCloudResource.VPCId),
+				InternetGatewayId: aws.String(profile.AWSCloudResource.InternetGatewayId),
+			})
+		return err
+	})
+
+	_, err := vpcClient.client.DeleteInternetGateway(
+		ctx,
+		&ec2.DeleteInternetGatewayInput{
+			InternetGatewayId: aws.String(profile.AWSCloudResource.InternetGatewayId),
+		})
+	if err != nil {
+		log.Fatal("failed to delete internet gateway, " + err.Error())
+	}
+
+	// Subnet must be deleted before route table because it is associated with
+	// it and route table will not be deleted otherwise
+	retryOnError(10, 5, func() error {
+		_, err = vpcClient.client.DeleteSubnet(
+			ctx,
+			&ec2.DeleteSubnetInput{
+				SubnetId: aws.String(profile.AWSCloudResource.SubnetId),
+			})
+		return err
+	})
+
+	// routeTable
+	retryOnError(10, 5, func() error {
+		_, err = vpcClient.client.DeleteRouteTable(
+			ctx,
+			&ec2.DeleteRouteTableInput{
+				RouteTableId: aws.String(profile.AWSCloudResource.RouteTableId),
+			})
+		return err
+	})
+}
+
+func (vpcClient VpcClient) destroyVpc(ctx context.Context, profile *parser.Profile) {
+	vpcClient.deregisterAndDeleteFromVPC(ctx, profile)
+	retryOnError(10, 5, func() error {
+		_, err := vpcClient.client.DeleteVpc(
+			ctx,
+			&ec2.DeleteVpcInput{
+				VpcId: aws.String(profile.AWSCloudResource.VPCId),
+			})
+		return err
+	})
+}
+
 // generateVPCTags generates tags for the VPC and subnet and all other parts of networking that must be created
 //
 // TODO: make tags generate from one specified in config
@@ -177,4 +245,22 @@ func generateRulesForSG() []types.IpPermission {
 			Description: aws.String("allow all traffic"),
 		}},
 	}}
+}
+
+// retryOnError retries the function f if it returns an error
+// retryTimes - number of times to retry
+// sleepTime - time to sleep between retries
+// f - function to retry
+// used to retry on errors that are not critical usually for resource deletion
+func retryOnError(retryTimes int, sleepTime int, f func() error) {
+	for i := 0; i < retryTimes; i++ {
+		err := f()
+		if err != nil {
+			log.Println("failed to destroy resource, retrying... \n", err.Error())
+			time.Sleep(time.Duration(i*sleepTime) * time.Second)
+		} else {
+			log.Println("resource destroyed successfully")
+			break
+		}
+	}
 }

@@ -36,10 +36,21 @@ type AzureCloudResource struct {
 	ContainerInstance *ContainerInstance `toml:"container_instance,omitempty"`
 }
 
+type AWSCloudResource struct {
+	ECSClusterARN     string `toml:"ecs_cluster_arn,omitempty"`
+	TaskDefARN        string `toml:"task_def_arn,omitempty"`
+	InternetGatewayId string `toml:"internet_gateway_arn,omitempty"`
+	VPCId             string `toml:"vpc_id,omitempty"`
+	ServiceARN        string `toml:"service_arn,omitempty"`
+	SubnetId          string `toml:"subnet_id,omitempty"`
+	RouteTableId      string `toml:"route_table_id,omitempty"`
+}
+
 type Profile struct {
 	LocalRegistry      *LocalRegistry      `toml:"local_registry,omitempty"`
 	Tunnel             *Tunnel             `toml:"tunnel,omitempty"`
 	AzureCloudResource *AzureCloudResource `toml:"cloud_resource,omitempty"`
+	AWSCloudResource   *AWSCloudResource   `toml:"aws_cloud_resource,omitempty"`
 }
 
 // GetProfilePath returns the path to the profile file in the user's home directory
@@ -85,6 +96,23 @@ func SaveProfile(profile *Profile, profilePath string) error {
 	return nil
 }
 
+// Save saves the profile to the user's home directory
+// Newer version of SaveProfile function that avoids need of passing profilePath and profile as arguments
+func (profile *Profile) Save() {
+	profilePath, err := GetProfilePath()
+	if err != nil {
+		log.Fatal("❌ failed to get profile path: %w", err)
+	}
+	err = SaveProfile(profile, profilePath)
+	if err != nil {
+		log.Fatal("❌ failed to save profile: %w", err)
+	}
+}
+
+// LoadProfileData loads the profile data from the user's home directory
+// or creates what it is not found.
+//
+// Newer version of LoadOrCreateProfile function
 func LoadProfileData() (*Profile, string) {
 	profilePath, err := GetProfilePath()
 	if err != nil {
@@ -100,9 +128,9 @@ func LoadProfileData() (*Profile, string) {
 	return profile, profilePath
 }
 
-func (p *Profile) GetTunnelURL() string {
-	if p.Tunnel == nil {
+func (profile *Profile) GetTunnelURL() string {
+	if profile.Tunnel == nil {
 		log.Fatalf("❌ Tunnel does not exist")
 	}
-	return p.Tunnel.URL
+	return profile.Tunnel.URL
 }

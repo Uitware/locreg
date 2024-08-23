@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Uitware/locreg/pkg/local_registry"
 	"github.com/Uitware/locreg/pkg/parser"
+	"github.com/Uitware/locreg/pkg/providers/aws"
 	"github.com/Uitware/locreg/pkg/providers/azure"
 	"github.com/Uitware/locreg/pkg/tunnels/ngrok"
 	"github.com/spf13/cobra"
@@ -52,6 +53,12 @@ var destroyCmd = &cobra.Command{
 				azure.Destroy()
 				profile.AzureCloudResource = nil
 				saveProfile(profile, profilePath)
+				fmt.Println("✅ Cloud resources destroyed successfully")
+			}
+			if profile.AWSCloudResource != nil {
+				aws.Destroy()
+				profile.AWSCloudResource = nil
+				profile.Save()
 				fmt.Println("✅ Cloud resources destroyed successfully")
 			}
 

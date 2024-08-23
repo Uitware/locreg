@@ -48,9 +48,9 @@ var destroyCmd = &cobra.Command{
 			}
 
 		case "cloud":
-			if profile.CloudResource != nil {
+			if profile.AzureCloudResource != nil {
 				azure.Destroy()
-				profile.CloudResource = nil
+				profile.AzureCloudResource = nil
 				saveProfile(profile, profilePath)
 				fmt.Println("✅ Cloud resources destroyed successfully")
 			}
@@ -91,9 +91,9 @@ func destroyAllResources(profile *parser.Profile, profilePath string) {
 		fmt.Println("✅ Tunnel destroyed successfully")
 	}
 
-	if profile.CloudResource != nil {
+	if profile.AzureCloudResource != nil {
 		azure.Destroy()
-		profile.CloudResource = nil
+		profile.AzureCloudResource = nil
 		saveProfile(profile, profilePath)
 		fmt.Println("✅ Cloud resources destroyed successfully")
 	}

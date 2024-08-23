@@ -21,7 +21,7 @@ var deployCmd = &cobra.Command{
 
 		profile, _ := parser.LoadProfileData()
 
-		if profile.CloudResource != nil {
+		if profile.AzureCloudResource != nil {
 			log.Fatalf("❌ Cloud resource already exists. Please destroy it before deploying a new one")
 		}
 		configFilePath := "locreg.yaml"

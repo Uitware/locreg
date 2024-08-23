@@ -31,15 +31,15 @@ type ContainerInstance struct {
 	ContainerInstanceName string `toml:"container_instance_name"`
 }
 
-type CloudResource struct {
+type AzureCloudResource struct {
 	AppService        *AppService        `toml:"app_service,omitempty"`
 	ContainerInstance *ContainerInstance `toml:"container_instance,omitempty"`
 }
 
 type Profile struct {
-	LocalRegistry *LocalRegistry `toml:"local_registry,omitempty"`
-	Tunnel        *Tunnel        `toml:"tunnel,omitempty"`
-	CloudResource *CloudResource `toml:"cloud_resource,omitempty"`
+	LocalRegistry      *LocalRegistry      `toml:"local_registry,omitempty"`
+	Tunnel             *Tunnel             `toml:"tunnel,omitempty"`
+	AzureCloudResource *AzureCloudResource `toml:"cloud_resource,omitempty"`
 }
 
 // GetProfilePath returns the path to the profile file in the user's home directory

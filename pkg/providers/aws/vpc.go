@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"log"
+	"strings"
 )
 
 type VpcClient struct {
@@ -58,7 +59,11 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context) *string {
 			IpPermissions: generateRulesForSG(),
 		})
 	if err != nil {
-		log.Fatal("failed to authorize security group egress, " + err.Error())
+		// Remove as not affecting the work of deployed containers
+		// and don't affect anything
+		if !strings.Contains(err.Error(), "InvalidPermission.Duplicate") {
+			log.Fatal("failed to authorize security group egress, " + err.Error())
+		}
 	}
 	return resp.Vpc.VpcId
 }

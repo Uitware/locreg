@@ -31,7 +31,9 @@ func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config) string
 		Tags:              generateECSTags(),
 	})
 	if err != nil {
-		log.Fatal("failed to create cluster, " + err.Error())
+		defer ecsClient.destroyECS(ctx, profile)
+		log.Print("failed to create cluster, " + err.Error())
+		return ""
 	}
 
 	profile.AWSCloudResource = &parser.AWSCloudResource{
@@ -76,7 +78,9 @@ func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *pa
 		Tags:            generateECSTags(),
 	})
 	if err != nil {
-		log.Fatal("failed to create task definition, " + err.Error())
+		defer ecsClient.destroyTaskDefinition(ctx, profile)
+		log.Print("failed to create task definition, " + err.Error())
+		return
 	}
 	profile.AWSCloudResource.TaskDefARN = *resp.TaskDefinition.TaskDefinitionArn
 	profile.Save()
@@ -98,7 +102,9 @@ func (ecsClient EcsClient) runService(ctx context.Context, subnetId string) {
 		},
 	})
 	if err != nil {
-		log.Fatal("failed to run task, " + err.Error())
+		defer ecsClient.destroyService(ctx, profile)
+		log.Print("failed to run task, " + err.Error())
+		return
 	}
 	profile.AWSCloudResource.ServiceARN = *resp.Service.ServiceArn
 	profile.Save()

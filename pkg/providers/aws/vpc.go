@@ -27,7 +27,9 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 			TagSpecifications: generateVPCTags(types.ResourceTypeVpc),
 		})
 	if err != nil {
-		log.Fatal("failed to create VPC, " + err.Error())
+		defer vpcClient.destroyVpc(ctx, profile)
+		log.Printf("failed to create VPC, " + err.Error())
+		return nil
 	}
 	profile.AWSCloudResource.VPCId = *resp.Vpc.VpcId
 	profile.Save()
@@ -43,7 +45,9 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 			}},
 		})
 	if err != nil {
-		log.Fatal("failed to get security group, " + err.Error())
+		defer vpcClient.destroyVpc(ctx, profile)
+		log.Println("failed to get security group, " + err.Error())
+		return nil
 	}
 
 	_, err = vpcClient.client.AuthorizeSecurityGroupIngress(
@@ -53,7 +57,9 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 			IpPermissions: generateRulesForSG(),
 		})
 	if err != nil {
-		log.Fatal("failed to authorize security group ingress, " + err.Error())
+		defer vpcClient.destroyVpc(ctx, profile)
+		log.Println("failed to authorize security group ingress, " + err.Error())
+		return nil
 	}
 
 	_, err = vpcClient.client.AuthorizeSecurityGroupEgress(
@@ -66,7 +72,9 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 		// Remove as not affecting the work of deployed containers
 		// and don't affect anything
 		if !strings.Contains(err.Error(), "InvalidPermission.Duplicate") {
-			log.Fatal("failed to authorize security group egress, " + err.Error())
+			defer vpcClient.destroyVpc(ctx, profile)
+			log.Println("failed to authorize security group egress, " + err.Error())
+			return nil
 		}
 	}
 	return resp.Vpc.VpcId
@@ -84,7 +92,9 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			TagSpecifications: generateVPCTags(types.ResourceTypeSubnet),
 		})
 	if err != nil {
-		log.Fatal("failed to create subnet, " + err.Error())
+		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		log.Println("failed to create subnet, " + err.Error())
+		return ""
 	}
 	profile.AWSCloudResource.SubnetId = *subnet.Subnet.SubnetId
 	profile.Save()
@@ -95,7 +105,9 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			TagSpecifications: generateVPCTags(types.ResourceTypeInternetGateway),
 		})
 	if err != nil {
-		log.Fatal("failed to create internet gateway, " + err.Error())
+		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		log.Print("failed to create internet gateway, " + err.Error())
+		return ""
 	}
 	profile.AWSCloudResource.InternetGatewayId = *internetGateway.InternetGateway.InternetGatewayId
 	profile.Save()
@@ -107,7 +119,9 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			TagSpecifications: generateVPCTags(types.ResourceTypeRouteTable),
 		})
 	if err != nil {
-		log.Fatal("failed to create route table, " + err.Error())
+		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		log.Println("failed to create route table, " + err.Error())
+		return ""
 	}
 	profile.AWSCloudResource.RouteTableId = *routeTable.RouteTable.RouteTableId
 	profile.Save()
@@ -121,7 +135,9 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			InternetGatewayId: internetGateway.InternetGateway.InternetGatewayId,
 		})
 	if err != nil {
-		log.Fatal("failed to attach internet gateway, " + err.Error())
+		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		log.Println("failed to attach internet gateway, " + err.Error())
+		return ""
 	}
 
 	_, err = vpcClient.client.CreateRoute(
@@ -132,7 +148,9 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			GatewayId:            internetGateway.InternetGateway.InternetGatewayId,
 		})
 	if err != nil {
-		log.Fatal("failed to create route, " + err.Error())
+		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		log.Println("failed to create route, " + err.Error())
+		return ""
 	}
 
 	_, err = vpcClient.client.AssociateRouteTable(
@@ -142,7 +160,9 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			SubnetId:     subnet.Subnet.SubnetId,
 		})
 	if err != nil {
-		log.Fatal("failed to associate route table, " + err.Error())
+		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		log.Println("failed to associate route table, " + err.Error())
+		return ""
 	}
 
 	_, err = vpcClient.client.ModifySubnetAttribute(
@@ -154,15 +174,17 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			},
 		})
 	if err != nil {
-		log.Fatal("failed to modify subnet attribute, " + err.Error())
+		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		log.Println("failed to modify subnet attribute, " + err.Error())
+		return ""
 	}
 	log.Println("subnet created, " + *subnet.Subnet.SubnetId)
 	return *subnet.Subnet.SubnetId
 }
 
-// deregisterAndDeleteFromVPC deregister and deletes Internet Gateway, RouteTable and Subnet from VPC
+// deregisterAndDestroyFromVPC deregister and deletes Internet Gateway, RouteTable and Subnet from VPC
 // that specified in the profile
-func (vpcClient VpcClient) deregisterAndDeleteFromVPC(ctx context.Context, profile *parser.Profile) {
+func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, profile *parser.Profile) {
 	// internetGateway
 	retryOnError(5, 5, func() error {
 		_, err := vpcClient.client.DetachInternetGateway(
@@ -206,7 +228,7 @@ func (vpcClient VpcClient) deregisterAndDeleteFromVPC(ctx context.Context, profi
 }
 
 func (vpcClient VpcClient) destroyVpc(ctx context.Context, profile *parser.Profile) {
-	vpcClient.deregisterAndDeleteFromVPC(ctx, profile)
+	vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
 	retryOnError(10, 5, func() error {
 		_, err := vpcClient.client.DeleteVpc(
 			ctx,
@@ -256,7 +278,8 @@ func retryOnError(retryTimes int, sleepTime int, f func() error) {
 	for i := 0; i < retryTimes; i++ {
 		err := f()
 		if err != nil {
-			log.Println("failed to destroy resource, retrying... \n", err.Error())
+			//log.Println("failed to destroy resource, retrying... \n", err.Error()) // add debug mode for this
+			log.Print("failed to destroy resource, retrying...")
 			time.Sleep(time.Duration(i*sleepTime) * time.Second)
 		} else {
 			log.Println("resource destroyed successfully")

@@ -104,6 +104,13 @@ func destroyAllResources(profile *parser.Profile, profilePath string) {
 		saveProfile(profile, profilePath)
 		fmt.Println("✅ Cloud resources destroyed successfully")
 	}
+
+	if profile.AWSCloudResource != nil {
+		aws.Destroy()
+		profile.AWSCloudResource = nil
+		profile.Save()
+		fmt.Println("✅ Cloud resources destroyed successfully")
+	}
 }
 
 // saveProfile saves the profile

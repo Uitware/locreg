@@ -135,11 +135,11 @@ func writeProfileContainerInstance(resourceGroupName, containerInstanceName stri
 		return fmt.Errorf("❌ failed to load or create profile: %w", err)
 	}
 
-	if profile.CloudResource == nil {
-		profile.CloudResource = &parser.CloudResource{}
+	if profile.AzureCloudResource == nil {
+		profile.AzureCloudResource = &parser.AzureCloudResource{}
 	}
 
-	profile.CloudResource.ContainerInstance = &parser.ContainerInstance{
+	profile.AzureCloudResource.ContainerInstance = &parser.ContainerInstance{
 		ResourceGroupName:     resourceGroupName,
 		ContainerInstanceName: containerInstanceName,
 	}

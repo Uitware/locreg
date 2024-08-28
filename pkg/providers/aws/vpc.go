@@ -31,7 +31,9 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 		log.Printf("failed to create VPC, " + err.Error())
 		return nil
 	}
-	profile.AWSCloudResource.VPCId = *resp.Vpc.VpcId
+	profile.AWSCloudResource.VPC = &parser.VPC{
+		VPCId: *resp.Vpc.VpcId,
+	}
 	profile.Save()
 
 	// Get a default security group to configure it
@@ -96,7 +98,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 		log.Println("failed to create subnet, " + err.Error())
 		return ""
 	}
-	profile.AWSCloudResource.SubnetId = *subnet.Subnet.SubnetId
+	profile.AWSCloudResource.VPC.SubnetId = *subnet.Subnet.SubnetId
 	profile.Save()
 
 	internetGateway, err := vpcClient.client.CreateInternetGateway(
@@ -109,7 +111,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 		log.Print("failed to create internet gateway, " + err.Error())
 		return ""
 	}
-	profile.AWSCloudResource.InternetGatewayId = *internetGateway.InternetGateway.InternetGatewayId
+	profile.AWSCloudResource.VPC.InternetGatewayId = *internetGateway.InternetGateway.InternetGatewayId
 	profile.Save()
 
 	routeTable, err := vpcClient.client.CreateRouteTable(
@@ -123,7 +125,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 		log.Println("failed to create route table, " + err.Error())
 		return ""
 	}
-	profile.AWSCloudResource.RouteTableId = *routeTable.RouteTable.RouteTableId
+	profile.AWSCloudResource.VPC.RouteTableId = *routeTable.RouteTable.RouteTableId
 	profile.Save()
 
 	// First you need to attach the internet gateway to the VPC
@@ -190,8 +192,8 @@ func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, prof
 		_, err := vpcClient.client.DetachInternetGateway(
 			ctx,
 			&ec2.DetachInternetGatewayInput{
-				VpcId:             aws.String(profile.AWSCloudResource.VPCId),
-				InternetGatewayId: aws.String(profile.AWSCloudResource.InternetGatewayId),
+				VpcId:             aws.String(profile.AWSCloudResource.VPC.VPCId),
+				InternetGatewayId: aws.String(profile.AWSCloudResource.VPC.InternetGatewayId),
 			})
 		return err
 	})
@@ -199,7 +201,7 @@ func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, prof
 	_, err := vpcClient.client.DeleteInternetGateway(
 		ctx,
 		&ec2.DeleteInternetGatewayInput{
-			InternetGatewayId: aws.String(profile.AWSCloudResource.InternetGatewayId),
+			InternetGatewayId: aws.String(profile.AWSCloudResource.VPC.InternetGatewayId),
 		})
 	if err != nil {
 		log.Fatal("failed to delete internet gateway, " + err.Error())
@@ -211,7 +213,7 @@ func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, prof
 		_, err = vpcClient.client.DeleteSubnet(
 			ctx,
 			&ec2.DeleteSubnetInput{
-				SubnetId: aws.String(profile.AWSCloudResource.SubnetId),
+				SubnetId: aws.String(profile.AWSCloudResource.VPC.SubnetId),
 			})
 		return err
 	})
@@ -221,7 +223,7 @@ func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, prof
 		_, err = vpcClient.client.DeleteRouteTable(
 			ctx,
 			&ec2.DeleteRouteTableInput{
-				RouteTableId: aws.String(profile.AWSCloudResource.RouteTableId),
+				RouteTableId: aws.String(profile.AWSCloudResource.VPC.RouteTableId),
 			})
 		return err
 	})
@@ -233,7 +235,7 @@ func (vpcClient VpcClient) destroyVpc(ctx context.Context, profile *parser.Profi
 		_, err := vpcClient.client.DeleteVpc(
 			ctx,
 			&ec2.DeleteVpcInput{
-				VpcId: aws.String(profile.AWSCloudResource.VPCId),
+				VpcId: aws.String(profile.AWSCloudResource.VPC.VPCId),
 			})
 		return err
 	})

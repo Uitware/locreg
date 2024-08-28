@@ -36,14 +36,22 @@ type AzureCloudResource struct {
 	ContainerInstance *ContainerInstance `toml:"container_instance,omitempty"`
 }
 
-type AWSCloudResource struct {
-	ECSClusterARN     string `toml:"ecs_cluster_arn,omitempty"`
-	TaskDefARN        string `toml:"task_def_arn,omitempty"`
+type VPC struct {
 	InternetGatewayId string `toml:"internet_gateway_arn,omitempty"`
 	VPCId             string `toml:"vpc_id,omitempty"`
-	ServiceARN        string `toml:"service_arn,omitempty"`
 	SubnetId          string `toml:"subnet_id,omitempty"`
 	RouteTableId      string `toml:"route_table_id,omitempty"`
+}
+
+type ECS struct {
+	ECSClusterARN string `toml:"ecs_cluster_arn,omitempty"`
+	TaskDefARN    string `toml:"task_def_arn,omitempty"`
+	ServiceARN    string `toml:"service_arn,omitempty"`
+}
+
+type AWSCloudResource struct {
+	VPC *VPC `toml:"vpc,omitempty"`
+	ECS *ECS `toml:"ecs,omitempty"`
 }
 
 type Profile struct {

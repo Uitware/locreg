@@ -37,7 +37,9 @@ func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config) string
 	}
 
 	profile.AWSCloudResource = &parser.AWSCloudResource{
-		ECSClusterARN: *resp.Cluster.ClusterArn,
+		ECS: &parser.ECS{
+			ECSClusterARN: *resp.Cluster.ClusterArn,
+		},
 	}
 	profile.Save()
 
@@ -82,7 +84,7 @@ func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *pa
 		log.Print("failed to create task definition, " + err.Error())
 		return
 	}
-	profile.AWSCloudResource.TaskDefARN = *resp.TaskDefinition.TaskDefinitionArn
+	profile.AWSCloudResource.ECS.TaskDefARN = *resp.TaskDefinition.TaskDefinitionArn
 	profile.Save()
 }
 
@@ -106,14 +108,14 @@ func (ecsClient EcsClient) runService(ctx context.Context, subnetId string) {
 		log.Print("failed to run task, " + err.Error())
 		return
 	}
-	profile.AWSCloudResource.ServiceARN = *resp.Service.ServiceArn
+	profile.AWSCloudResource.ECS.ServiceARN = *resp.Service.ServiceArn
 	profile.Save()
 }
 
 // destroyTaskDefinition destroys the task definition
 func (ecsClient EcsClient) destroyTaskDefinition(ctx context.Context, profile *parser.Profile) {
 	_, err := ecsClient.client.DeregisterTaskDefinition(ctx, &ecs.DeregisterTaskDefinitionInput{
-		TaskDefinition: aws.String(profile.AWSCloudResource.TaskDefARN),
+		TaskDefinition: aws.String(profile.AWSCloudResource.ECS.TaskDefARN),
 	})
 	if err != nil {
 		log.Fatal("failed to destroy task definition, " + err.Error())
@@ -123,8 +125,8 @@ func (ecsClient EcsClient) destroyTaskDefinition(ctx context.Context, profile *p
 // destroyService set service desired count to 0 and delete the service
 func (ecsClient EcsClient) destroyService(ctx context.Context, profile *parser.Profile) {
 	_, err := ecsClient.client.UpdateService(ctx, &ecs.UpdateServiceInput{
-		Cluster:      aws.String(profile.AWSCloudResource.ECSClusterARN),
-		Service:      aws.String(profile.AWSCloudResource.ServiceARN),
+		Cluster:      aws.String(profile.AWSCloudResource.ECS.ECSClusterARN),
+		Service:      aws.String(profile.AWSCloudResource.ECS.ServiceARN),
 		DesiredCount: aws.Int32(0),
 	})
 	if err != nil {
@@ -142,7 +144,7 @@ func (ecsClient EcsClient) destroyService(ctx context.Context, profile *parser.P
 func (ecsClient EcsClient) deregisterContainerInstances(ctx context.Context, profile *parser.Profile) {
 	// List all container instances in the cluster
 	listResp, err := ecsClient.client.ListContainerInstances(ctx, &ecs.ListContainerInstancesInput{
-		Cluster: aws.String(profile.AWSCloudResource.ECSClusterARN),
+		Cluster: aws.String(profile.AWSCloudResource.ECS.ECSClusterARN),
 	})
 	if err != nil {
 		log.Fatal("failed to list container instances, " + err.Error())
@@ -150,7 +152,7 @@ func (ecsClient EcsClient) deregisterContainerInstances(ctx context.Context, pro
 
 	for _, containerInstance := range listResp.ContainerInstanceArns {
 		_, err = ecsClient.client.DeregisterContainerInstance(ctx, &ecs.DeregisterContainerInstanceInput{
-			Cluster:           aws.String(profile.AWSCloudResource.ECSClusterARN),
+			Cluster:           aws.String(profile.AWSCloudResource.ECS.ECSClusterARN),
 			ContainerInstance: aws.String(containerInstance),
 			Force:             aws.Bool(true),
 		})
@@ -166,7 +168,7 @@ func (ecsClient EcsClient) destroyECS(ctx context.Context, profile *parser.Profi
 
 	retryOnError(5, 5, func() error {
 		_, err := ecsClient.client.DeleteCluster(ctx, &ecs.DeleteClusterInput{
-			Cluster: aws.String(profile.AWSCloudResource.ECSClusterARN),
+			Cluster: aws.String(profile.AWSCloudResource.ECS.ECSClusterARN),
 		})
 		return err
 	})

@@ -79,19 +79,29 @@ type Config struct {
 			AWS struct {
 				Region string `mapstructure:"region" default:"us-east-1"`
 				ECS    struct {
-					ClusterName    string `mapstructure:"clusterName" default:"locreg-cluster"`
-					TaskDefinition struct {
-						Family               string `mapstructure:"family" default:"locreg-task"`
-						ContainerDefinitions struct {
+					ClusterName           string `mapstructure:"clusterName" default:"locreg-cluster"`
+					ServiceName           string `mapstructure:"serviceName" default:"locreg-service"`
+					ServiceContainerCount int    `mapstructure:"serviceContainerCount" default:"1"`
+					TaskDefinition        struct {
+						Family              string `mapstructure:"family" default:"locreg-task"`
+						MemoryAllocation    int    `mapstructure:"memoryAllocation" default:"512"`
+						CPUAllocation       int    `mapstructure:"cpuAllocation" default:"256"`
+						ContainerDefinition struct {
 							Name         string `mapstructure:"name" default:"locreg-container"`
-							Image        string `mapstructure:"image"`
 							PortMappings []struct {
-								ContainerPort int `mapstructure:"containerPort"`
-								HostPort      int `mapstructure:"hostPort"`
+								ContainerPort int    `mapstructure:"containerPort"`
+								HostPort      int    `mapstructure:"hostPort"`
+								Protocol      string `mapstructure:"protocol"`
 							} `mapstructure:"portMappings"`
 						} `mapstructure:"containerDefinitions"`
 					} `mapstructure:"taskDefinition"`
 				} `mapstructure:"ecs"`
+				VPC struct {
+					CIDRBlock string `mapstructure:"cidrBlock" default:"10.10.0.0/16"`
+					Subnet    struct {
+						CIDRBlock string `mapstructure:"cidrBlock" default:"10.10.10.0/24"`
+					} `mapstructure:"subnet"`
+				} `mapstructure:"vpc"`
 			} `mapstructure:"aws"`
 		} `mapstructure:"provider"`
 	} `mapstructure:"deploy"`
@@ -190,6 +200,7 @@ func setDynamicDefaults() {
 		{
 			"containerPort": 80,
 			"hostPort":      80,
+			"protocol":      "tcp",
 		},
 	})
 
@@ -211,6 +222,11 @@ func generateRandomString(length int) string {
 		panic(err)
 	}
 	return hex.EncodeToString(bytes)
+}
+
+// GetRegistryImage returns the registry image with the tag
+func (config *Config) GetRegistryImage() string {
+	return fmt.Sprintf("%s:%s", config.Image.Name, config.Image.Tag)
 }
 
 func (config *Config) IsNgrokConfigured() bool {

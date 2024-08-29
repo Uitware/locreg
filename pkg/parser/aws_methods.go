@@ -76,7 +76,7 @@ func (config *Config) GenerateRulesForSG() []ec2Types.IpPermission {
 			IpProtocol: aws.String(port.Protocol),
 			IpRanges: []ec2Types.IpRange{{
 				CidrIp:      aws.String("0.0.0.0/0"),
-				Description: aws.String("allow all traffic"),
+				Description: aws.String("allow traffic from all IPs for specified port"),
 			}},
 		})
 	}

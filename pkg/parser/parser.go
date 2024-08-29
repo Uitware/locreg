@@ -175,6 +175,8 @@ func setStructDefaults(config interface{}, parentKey string) {
 					} else {
 						panic(err)
 					}
+				default:
+					panic("unhandled default case")
 				}
 			}
 		}

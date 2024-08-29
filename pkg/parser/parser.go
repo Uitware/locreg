@@ -76,6 +76,33 @@ type Config struct {
 					} `mapstructure:"resources"`
 				} `mapstructure:"containerInstance"`
 			} `mapstructure:"azure"`
+			AWS struct {
+				Region string `mapstructure:"region" default:"us-east-1"`
+				ECS    struct {
+					ClusterName           string `mapstructure:"clusterName" default:"locreg-cluster"`
+					ServiceName           string `mapstructure:"serviceName" default:"locreg-service"`
+					ServiceContainerCount int    `mapstructure:"serviceContainerCount" default:"1"`
+					TaskDefinition        struct {
+						Family              string `mapstructure:"family" default:"locreg-task"`
+						MemoryAllocation    int    `mapstructure:"memoryAllocation" default:"512"`
+						CPUAllocation       int    `mapstructure:"cpuAllocation" default:"256"`
+						ContainerDefinition struct {
+							Name         string `mapstructure:"name" default:"locreg-container"`
+							PortMappings []struct {
+								ContainerPort int    `mapstructure:"containerPort"`
+								HostPort      int    `mapstructure:"hostPort"`
+								Protocol      string `mapstructure:"protocol"`
+							} `mapstructure:"portMappings"`
+						} `mapstructure:"containerDefinitions"`
+					} `mapstructure:"taskDefinition"`
+				} `mapstructure:"ecs"`
+				VPC struct {
+					CIDRBlock string `mapstructure:"cidrBlock" default:"10.10.0.0/16"`
+					Subnet    struct {
+						CIDRBlock string `mapstructure:"cidrBlock" default:"10.10.10.0/24"`
+					} `mapstructure:"subnet"`
+				} `mapstructure:"vpc"`
+			} `mapstructure:"aws"`
 		} `mapstructure:"provider"`
 	} `mapstructure:"deploy"`
 	Tags map[string]*string `mapstructure:"tags"`
@@ -89,8 +116,8 @@ func LoadConfig(filePath string) (*Config, error) {
 		return nil, fmt.Errorf("❌ error reading config file: %w", err)
 	}
 
-	setDynamicDefaults()
 	setStructDefaults(&Config{}, "") // Set default values based on `default` tag in struct fields
+	setDynamicDefaults()
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
@@ -108,7 +135,8 @@ func LoadConfig(filePath string) (*Config, error) {
 }
 
 // setStructDefaults sets default values based on `default` tag in struct fields
-// It is a recursive function that sets default values for nested structs
+// It's a recursive function that sets default values for nested structs
+// values are only set to providers whose name specified in the config file Config struct
 func setStructDefaults(config interface{}, parentKey string) {
 	v := reflect.ValueOf(config).Elem()
 	t := v.Type()
@@ -120,7 +148,6 @@ func setStructDefaults(config interface{}, parentKey string) {
 		if parentKey != "" {
 			key = parentKey + "." + key
 		}
-
 		if field.Kind() == reflect.Struct {
 			if isInConfig(key) {
 				setStructDefaults(field.Addr().Interface(), key)
@@ -148,6 +175,8 @@ func setStructDefaults(config interface{}, parentKey string) {
 					} else {
 						panic(err)
 					}
+				default:
+					panic("unhandled default case")
 				}
 			}
 		}
@@ -169,6 +198,14 @@ func setDynamicDefaults() {
 			"protocol": "TCP",
 		},
 	})
+	viper.SetDefault("deploy.provider.aws.ecs.taskDefinition.containerDefinitions.portMappings", []map[string]interface{}{
+		{
+			"containerPort": 80,
+			"hostPort":      80,
+			"protocol":      "tcp",
+		},
+	})
+
 	viper.SetDefault("image.tag", getGitSHA())
 }
 
@@ -187,6 +224,11 @@ func generateRandomString(length int) string {
 		panic(err)
 	}
 	return hex.EncodeToString(bytes)
+}
+
+// GetRegistryImage returns the registry image with the tag
+func (config *Config) GetRegistryImage() string {
+	return fmt.Sprintf("%s:%s", config.Image.Name, config.Image.Tag)
 }
 
 func (config *Config) IsNgrokConfigured() bool {

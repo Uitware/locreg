@@ -8,17 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"log"
+	"strconv"
 )
 
 type EcsClient struct {
-	client *ecs.Client
-}
-
-func generateECSTags() []types.Tag {
-	return []types.Tag{{
-		Key:   aws.String("managed-by"),
-		Value: aws.String("locreg"),
-	}}
+	client       *ecs.Client
+	locregConfig *parser.Config
 }
 
 // deployECS creates an ECS cluster on Fargate with VPC and public subnet
@@ -27,8 +22,8 @@ func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config) string
 	profile, _ := parser.LoadProfileData()
 	resp, err := ecsClient.client.CreateCluster(ctx, &ecs.CreateClusterInput{
 		CapacityProviders: []string{"FARGATE"},
-		ClusterName:       aws.String("locreg-cluster"),
-		Tags:              generateECSTags(),
+		ClusterName:       aws.String(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.ClusterName),
+		Tags:              ecsClient.locregConfig.GenerateECSTags(),
 	})
 	if err != nil {
 		defer ecsClient.destroyECS(ctx, profile)
@@ -44,7 +39,10 @@ func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config) string
 	profile.Save()
 
 	// Create VPC with public subnet
-	ec2Instance := VpcClient{client: ec2.NewFromConfig(cfg)}
+	ec2Instance := VpcClient{
+		client:       ec2.NewFromConfig(cfg),
+		locregConfig: ecsClient.locregConfig,
+	}
 	subnetId := ec2Instance.createPublicSubnet(ctx, profile)
 
 	// Create task definition
@@ -60,24 +58,19 @@ func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *pa
 		OperatingSystemFamily: types.OSFamilyLinux,
 	}
 	containerDefinition := []types.ContainerDefinition{{
-		Name:  aws.String("locreg-container"),
-		Image: aws.String("nginx"),
-		PortMappings: []types.PortMapping{
-			{
-				ContainerPort: aws.Int32(80),
-				HostPort:      aws.Int32(80),
-				Protocol:      types.TransportProtocolTcp,
-			}},
+		Name:         aws.String(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.ContainerDefinition.Name),
+		Image:        aws.String(ecsClient.locregConfig.GetRegistryImage()),
+		PortMappings: ecsClient.locregConfig.GenerateContainerPorts(),
 	}}
 	resp, err := ecsClient.client.RegisterTaskDefinition(ctx, &ecs.RegisterTaskDefinitionInput{
-		Family:               aws.String("locreg-test-task"),
+		Family:               aws.String(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.Family),
 		ContainerDefinitions: containerDefinition,
-		Cpu:                  aws.String("1024"),
-		Memory:               aws.String("2048"),
+		Cpu:                  aws.String(strconv.Itoa(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.CPUAllocation)),
+		Memory:               aws.String(strconv.Itoa(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.MemoryAllocation)),
 		NetworkMode:          types.NetworkModeAwsvpc,
 		// For Fargate launch type only
 		RuntimePlatform: &taskRuntimePlatform,
-		Tags:            generateECSTags(),
+		Tags:            ecsClient.locregConfig.GenerateECSTags(),
 	})
 	if err != nil {
 		defer ecsClient.destroyTaskDefinition(ctx, profile)
@@ -91,10 +84,10 @@ func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *pa
 func (ecsClient EcsClient) runService(ctx context.Context, subnetId string) {
 	profile, _ := parser.LoadProfileData()
 	resp, err := ecsClient.client.CreateService(ctx, &ecs.CreateServiceInput{
-		ServiceName:    aws.String("locreg-service"),
-		TaskDefinition: aws.String("locreg-test-task"),
-		Cluster:        aws.String("locreg-cluster"),
-		DesiredCount:   aws.Int32(1),
+		ServiceName:    aws.String(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.ServiceName),
+		TaskDefinition: aws.String(profile.AWSCloudResource.ECS.TaskDefARN),
+		Cluster:        aws.String(profile.AWSCloudResource.ECS.ECSClusterARN),
+		DesiredCount:   aws.Int32(int32(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.ServiceContainerCount)),
 		LaunchType:     types.LaunchTypeFargate,
 		NetworkConfiguration: &types.NetworkConfiguration{
 			AwsvpcConfiguration: &types.AwsVpcConfiguration{
@@ -102,6 +95,7 @@ func (ecsClient EcsClient) runService(ctx context.Context, subnetId string) {
 				Subnets:        []string{subnetId},
 			},
 		},
+		Tags: ecsClient.locregConfig.GenerateECSTags(),
 	})
 	if err != nil {
 		defer ecsClient.destroyService(ctx, profile)
@@ -133,8 +127,8 @@ func (ecsClient EcsClient) destroyService(ctx context.Context, profile *parser.P
 		log.Print("failed to stop service, " + err.Error())
 	}
 	_, err = ecsClient.client.DeleteService(ctx, &ecs.DeleteServiceInput{
-		Cluster: aws.String("locreg-cluster"),
-		Service: aws.String("locreg-service"),
+		Cluster: aws.String(profile.AWSCloudResource.ECS.ECSClusterARN),
+		Service: aws.String(profile.AWSCloudResource.ECS.ServiceARN),
 	})
 	if err != nil {
 		log.Print("failed to destroy service, " + err.Error())

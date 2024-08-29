@@ -12,19 +12,19 @@ import (
 )
 
 type VpcClient struct {
-	client *ec2.Client
+	client       *ec2.Client
+	locregConfig *parser.Config
 }
 
 // createVpcForFargate creates a VPC in AWS and public subnet
 // For containers that use the Fargate launch type.
-//
 // return: vpcId
 func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *parser.Profile) *string {
 	resp, err := vpcClient.client.CreateVpc(
 		ctx,
 		&ec2.CreateVpcInput{
-			CidrBlock:         aws.String("10.10.0.0/16"),
-			TagSpecifications: generateVPCTags(types.ResourceTypeVpc),
+			CidrBlock:         aws.String(vpcClient.locregConfig.Deploy.Provider.AWS.VPC.CIDRBlock),
+			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeVpc),
 		})
 	if err != nil {
 		defer vpcClient.destroyVpc(ctx, profile)
@@ -55,8 +55,9 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 	_, err = vpcClient.client.AuthorizeSecurityGroupIngress(
 		ctx,
 		&ec2.AuthorizeSecurityGroupIngressInput{
-			GroupId:       vpcSecurityGroup.SecurityGroups[0].GroupId,
-			IpPermissions: generateRulesForSG(),
+			GroupId:           vpcSecurityGroup.SecurityGroups[0].GroupId,
+			IpPermissions:     vpcClient.locregConfig.GenerateRulesForSG(),
+			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeSecurityGroupRule),
 		})
 	if err != nil {
 		defer vpcClient.destroyVpc(ctx, profile)
@@ -67,8 +68,9 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 	_, err = vpcClient.client.AuthorizeSecurityGroupEgress(
 		ctx,
 		&ec2.AuthorizeSecurityGroupEgressInput{
-			GroupId:       vpcSecurityGroup.SecurityGroups[0].GroupId,
-			IpPermissions: generateRulesForSG(),
+			GroupId:           vpcSecurityGroup.SecurityGroups[0].GroupId,
+			IpPermissions:     vpcClient.locregConfig.GenerateRulesForSG(),
+			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeSecurityGroupRule),
 		})
 	if err != nil {
 		// Remove as not affecting the work of deployed containers
@@ -90,8 +92,8 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 		ctx,
 		&ec2.CreateSubnetInput{
 			VpcId:             vpcId,
-			CidrBlock:         aws.String("10.10.10.0/24"),
-			TagSpecifications: generateVPCTags(types.ResourceTypeSubnet),
+			CidrBlock:         aws.String(vpcClient.locregConfig.Deploy.Provider.AWS.VPC.Subnet.CIDRBlock),
+			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeSubnet),
 		})
 	if err != nil {
 		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
@@ -104,7 +106,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 	internetGateway, err := vpcClient.client.CreateInternetGateway(
 		ctx,
 		&ec2.CreateInternetGatewayInput{
-			TagSpecifications: generateVPCTags(types.ResourceTypeInternetGateway),
+			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeInternetGateway),
 		})
 	if err != nil {
 		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
@@ -118,7 +120,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 		ctx,
 		&ec2.CreateRouteTableInput{
 			VpcId:             vpcId,
-			TagSpecifications: generateVPCTags(types.ResourceTypeRouteTable),
+			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeRouteTable),
 		})
 	if err != nil {
 		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
@@ -184,6 +186,23 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 	return *subnet.Subnet.SubnetId
 }
 
+// retryOnError retries function, if it returns an error,
+//
+// retry time is calculated by iteration * sleepTime
+// used to retry on errors for resource deletion
+func retryOnError(retryTimes int, sleepTime int, f func() error) {
+	for i := 0; i < retryTimes; i++ {
+		err := f()
+		if err != nil {
+			log.Print("failed to destroy resource, retrying...")
+			time.Sleep(time.Duration(i*sleepTime) * time.Second)
+		} else {
+			log.Println("resource destroyed successfully")
+			break
+		}
+	}
+}
+
 // deregisterAndDestroyFromVPC deregister and deletes Internet Gateway, RouteTable and Subnet from VPC
 // that specified in the profile
 func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, profile *parser.Profile) {
@@ -239,53 +258,4 @@ func (vpcClient VpcClient) destroyVpc(ctx context.Context, profile *parser.Profi
 			})
 		return err
 	})
-}
-
-// generateVPCTags generates tags for the VPC and subnet and all other parts of networking that must be created
-//
-// TODO: make tags generate from one specified in config
-func generateVPCTags(ragResourceType types.ResourceType) []types.TagSpecification {
-	return []types.TagSpecification{
-		{
-			ResourceType: ragResourceType,
-			Tags: []types.Tag{{
-				Key:   aws.String("managed-by"),
-				Value: aws.String("locreg")}},
-		},
-	}
-}
-
-// generateRulesForSG generates ingress and egress
-// rules for the security group.
-//
-// TODO make it generate rules with values taken from config
-func generateRulesForSG() []types.IpPermission {
-	return []types.IpPermission{{
-		FromPort:   aws.Int32(-1),
-		ToPort:     aws.Int32(-1),
-		IpProtocol: aws.String("-1"),
-		IpRanges: []types.IpRange{{
-			CidrIp:      aws.String("0.0.0.0/0"),
-			Description: aws.String("allow all traffic"),
-		}},
-	}}
-}
-
-// retryOnError retries the function f if it returns an error
-// retryTimes - number of times to retry
-// sleepTime - time to sleep between retries
-// f - function to retry
-// used to retry on errors that are not critical usually for resource deletion
-func retryOnError(retryTimes int, sleepTime int, f func() error) {
-	for i := 0; i < retryTimes; i++ {
-		err := f()
-		if err != nil {
-			//log.Println("failed to destroy resource, retrying... \n", err.Error()) // add debug mode for this
-			log.Print("failed to destroy resource, retrying...")
-			time.Sleep(time.Duration(i*sleepTime) * time.Second)
-		} else {
-			log.Println("resource destroyed successfully")
-			break
-		}
-	}
 }

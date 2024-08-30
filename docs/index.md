@@ -4,8 +4,8 @@
 
 ![](./images/locreg_sample.png)
 
-`locreg` provides a simple way to create local container registry and cloud resources to host your app in desired cloud. Currently, supported cloud container deployment platforms include Azure Container Instances and Azure App services.
-Its core focus is to provide you with secure and free local storage for your images that can be easily use for cloud resources deployment.
+locreg provides a simple way to create local container registry and cloud resources to host your app in desired cloud. Currently, supported cloud container deployment platforms include Azure Container Instances, Azure App services, and AWS Elastic Container Service (ECS). 
+Its core focus is to provide you with secure and free local storage for your images that can be easily used for cloud resources deployment.
 
 As `locreg` is a cloud-agnostic solution, you can use it with any cloud provider you want to easily provision Internet-facing container registry via tunnel.
 
@@ -15,7 +15,6 @@ As `locreg` is a cloud-agnostic solution, you can use it with any cloud provider
 
 ---
 
-## What's next?
 ## What's next?
 - Use [getting started](./getting_started.md) guide to see how to use `locreg` to deploy your app.
 - Get familiar with `locreg` using [locreg CLI](./cli/locreg.md) guide.

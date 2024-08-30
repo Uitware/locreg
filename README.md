@@ -214,6 +214,33 @@ tags: # Tags for the cloud resources
 #tags: false
 ```
 
+☁️AWS ECS(Elastic Container Service):
+
+```
+deploy:
+  provider:
+    aws: # Specify the provider name
+      region: "us-east-1" # AWS region where resources will be deployed. May be omitted
+      ecs: # ECS service configuration
+        clusterName: "myClusterName" # Name of the ECS cluster. May be omitted
+        serviceName: "myServiceName" # Name of the ECS service. Must be unique. May be omitted
+        serviceContainerCount: 1 # Number of containers to run. May be omitted
+        taskDefinition:
+          family: "myTaskFamily" # Name of the task family. May be omitted
+          memoryAllocation: 512 # Memory allocated for the task in MB. May be omitted
+          cpuAllocation: 256 # CPU units allocated for the task. May be omitted
+          containerDefinitions:
+            - name: "myContainerName" # Name of the container. Must be unique. May be omitted
+              portMappings:
+                - containerPort: 80 # Port number on the container. May be omitted
+                  hostPort: 80 # Port number on the host. May be omitted
+                  protocol: "tcp" # Protocol used by the container. May be omitted
+      vpc: # VPC (Virtual Private Cloud) configuration
+        cidrBlock: "10.0.0.0/16" # CIDR block for the VPC. May be omitted
+        subnet:
+          cidrBlock: "10.0.1.0/24" # CIDR block for the subnet. May be omitted
+```
+
 Note that you should authenticate with ```az``` CLI in order to use Azure application backend: https://learn.microsoft.com/en-us/cli/azure/reference-index?view=azure-cli-latest#az-login
 
 ## 📦 ```locreg``` Docs

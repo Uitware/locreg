@@ -5,7 +5,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  logo: images/favicon.ico
+  logo: images/logo.ico
   favicon: images/favicon.ico
   custom_dir: docs/custom/
   palette:

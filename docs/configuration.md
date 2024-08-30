@@ -116,7 +116,7 @@ tunnel:
       networkName: locreg-ngrok
 ```
 
-## Deploy configuration
+## Deploy configuration Azure
 Deploy configuration part is used to store the settings of the deployment provider. The deployment configuration part consists of the following items:
 ```yaml
 deploy:
@@ -214,6 +214,73 @@ deploy:
           requests:
             cpu: 1.0
             memory: 1.5
+```
+ 
+## Deploy configuration AWS
+The deploy configuration section is used to store the settings for the AWS deployment provider. The deployment configuration consists of the following items:
+```yaml
+deploy:
+  provider:
+    aws: # specify the provider name
+      ecs: # Amazon ECS service configuration
+      vpc: # VPC configuration
+
+```
+
+### Deployment for Amazon ECS:
+```yaml
+
+deploy:
+  provider:
+    aws: # Specify the provider name
+      region: "us-east-1" # AWS region where resources will be deployed. May be omitted
+      ecs: # ECS service configuration
+        clusterName: "myClusterName" # Name of the ECS cluster. May be omitted
+        serviceName: "myServiceName" # Name of the ECS service. Must be unique. May be omitted
+        serviceContainerCount: 1 # Number of containers to run. May be omitted
+        taskDefinition:
+          family: "myTaskFamily" # Name of the task family. May be omitted
+          memoryAllocation: 512 # Memory allocated for the task in MB. May be omitted
+          cpuAllocation: 256 # CPU units allocated for the task. May be omitted
+          containerDefinitions:
+            - name: "myContainerName" # Name of the container. Must be unique. May be omitted
+              portMappings:
+                - containerPort: 80 # Port number on the container. May be omitted
+                  hostPort: 80 # Port number on the host. May be omitted
+                  protocol: "tcp" # Protocol used by the container. May be omitted
+      vpc: # VPC (Virtual Private Cloud) configuration
+        cidrBlock: "10.0.0.0/16" # CIDR block for the VPC. May be omitted
+        subnet:
+          cidrBlock: "10.0.1.0/24" # CIDR block for the subnet. May be omitted
+
+```
+
+#### ECS default values
+By default, the deployment configuration is set to the following values:
+```yaml
+deploy:
+  provider:
+    aws:
+      region: "us-east-1"
+      ecs:
+        clusterName: "locreg-cluster"
+        serviceName: "locreg-service"
+        serviceContainerCount: 1
+        taskDefinition:
+          family: "locreg-task"
+          memoryAllocation: 512
+          cpuAllocation: 256
+          containerDefinitions:
+            - name: "locreg-container"
+              portMappings:
+                - containerPort: 80
+                  hostPort: 80
+                  protocol: "tcp"
+      vpc:
+        cidrBlock: "10.10.0.0/16"
+        subnet:
+          cidrBlock: "10.10.10.0/24"
+
 ```
 
 ## Tags configuration

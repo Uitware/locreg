@@ -2,13 +2,17 @@ package aws
 
 import (
 	"context"
+	"fmt"
 	"github.com/Uitware/locreg/pkg/parser"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"log"
 	"strconv"
+	"strings"
 )
 
 type EcsClient struct {
@@ -26,7 +30,7 @@ func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config) string
 		Tags:              ecsClient.locregConfig.GenerateECSTags(),
 	})
 	if err != nil {
-		defer ecsClient.destroyECS(ctx, profile)
+		defer Destroy(ecsClient.locregConfig)
 		log.Print("failed to create cluster, " + err.Error())
 		return ""
 	}
@@ -43,6 +47,16 @@ func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config) string
 		client:       ec2.NewFromConfig(cfg),
 		locregConfig: ecsClient.locregConfig,
 	}
+	IamInstance := IamClient{
+		client:       iam.NewFromConfig(cfg),
+		locregConfig: ecsClient.locregConfig,
+	}
+	SecretInstance := SecretsManagerClient{
+		client:       secretsmanager.NewFromConfig(cfg),
+		locregConfig: ecsClient.locregConfig,
+	}
+	SecretInstance.createSecret(ctx, profile)
+	IamInstance.createRole(ctx, profile)
 	subnetId := ec2Instance.createPublicSubnet(ctx, profile)
 
 	// Create task definition
@@ -57,9 +71,17 @@ func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *pa
 		CpuArchitecture:       types.CPUArchitectureX8664,
 		OperatingSystemFamily: types.OSFamilyLinux,
 	}
+
+	log.Printf("\n" + profile.AWSCloudResource.ECS.SecretARN)
+
 	containerDefinition := []types.ContainerDefinition{{
-		Name:         aws.String(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.ContainerDefinition.Name),
-		Image:        aws.String(ecsClient.locregConfig.GetRegistryImage()),
+		Name: aws.String(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.ContainerDefinition.Name),
+		Image: aws.String(fmt.Sprintf("%s/%s",
+			strings.TrimPrefix(profile.Tunnel.URL, "https://"),
+			ecsClient.locregConfig.GetRegistryImage())),
+		RepositoryCredentials: &types.RepositoryCredentials{
+			CredentialsParameter: aws.String(profile.AWSCloudResource.ECS.SecretARN),
+		},
 		PortMappings: ecsClient.locregConfig.GenerateContainerPorts(),
 	}}
 	resp, err := ecsClient.client.RegisterTaskDefinition(ctx, &ecs.RegisterTaskDefinitionInput{
@@ -68,13 +90,15 @@ func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *pa
 		Cpu:                  aws.String(strconv.Itoa(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.CPUAllocation)),
 		Memory:               aws.String(strconv.Itoa(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.MemoryAllocation)),
 		NetworkMode:          types.NetworkModeAwsvpc,
+		// Role that allows ECS to pull the image from ECR
+		ExecutionRoleArn: aws.String(profile.AWSCloudResource.ECS.RoleARN),
 		// For Fargate launch type only
 		RuntimePlatform: &taskRuntimePlatform,
 		Tags:            ecsClient.locregConfig.GenerateECSTags(),
 	})
 	if err != nil {
-		defer ecsClient.destroyTaskDefinition(ctx, profile)
 		log.Print("failed to create task definition, " + err.Error())
+		defer Destroy(ecsClient.locregConfig)
 		return
 	}
 	profile.AWSCloudResource.ECS.TaskDefARN = *resp.TaskDefinition.TaskDefinitionArn
@@ -98,7 +122,7 @@ func (ecsClient EcsClient) runService(ctx context.Context, subnetId string) {
 		Tags: ecsClient.locregConfig.GenerateECSTags(),
 	})
 	if err != nil {
-		defer ecsClient.destroyService(ctx, profile)
+		defer Destroy(ecsClient.locregConfig)
 		log.Print("failed to run task, " + err.Error())
 		return
 	}
@@ -112,8 +136,10 @@ func (ecsClient EcsClient) destroyTaskDefinition(ctx context.Context, profile *p
 		TaskDefinition: aws.String(profile.AWSCloudResource.ECS.TaskDefARN),
 	})
 	if err != nil {
-		log.Fatal("failed to destroy task definition, " + err.Error())
+		log.Print("failed to destroy task definition, " + err.Error())
 	}
+	profile.AWSCloudResource.ECS.TaskDefARN = ""
+	profile.Save()
 }
 
 // destroyService set service desired count to 0 and delete the service
@@ -133,6 +159,8 @@ func (ecsClient EcsClient) destroyService(ctx context.Context, profile *parser.P
 	if err != nil {
 		log.Print("failed to destroy service, " + err.Error())
 	}
+	profile.AWSCloudResource.ECS.ServiceARN = ""
+	profile.Save()
 }
 
 func (ecsClient EcsClient) deregisterContainerInstances(ctx context.Context, profile *parser.Profile) {
@@ -141,9 +169,12 @@ func (ecsClient EcsClient) deregisterContainerInstances(ctx context.Context, pro
 		Cluster: aws.String(profile.AWSCloudResource.ECS.ECSClusterARN),
 	})
 	if err != nil {
-		log.Fatal("failed to list container instances, " + err.Error())
+		log.Print("failed to list container instances, " + err.Error())
 	}
 
+	if len(listResp.ContainerInstanceArns) == 0 {
+		return
+	}
 	for _, containerInstance := range listResp.ContainerInstanceArns {
 		_, err = ecsClient.client.DeregisterContainerInstance(ctx, &ecs.DeregisterContainerInstanceInput{
 			Cluster:           aws.String(profile.AWSCloudResource.ECS.ECSClusterARN),
@@ -151,7 +182,7 @@ func (ecsClient EcsClient) deregisterContainerInstances(ctx context.Context, pro
 			Force:             aws.Bool(true),
 		})
 		if err != nil {
-			log.Fatal("failed to destroy container instance, " + err.Error())
+			log.Print("failed to destroy container instance, " + err.Error())
 		}
 	}
 }
@@ -166,4 +197,6 @@ func (ecsClient EcsClient) destroyECS(ctx context.Context, profile *parser.Profi
 		})
 		return err
 	})
+	profile.AWSCloudResource.ECS.ECSClusterARN = ""
+	profile.Save()
 }

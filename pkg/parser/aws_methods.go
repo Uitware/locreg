@@ -4,6 +4,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	ec2Types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	secretsTypes "github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 )
 
 // Methods related to AWS configuration for the parser
@@ -37,6 +38,20 @@ func (config *Config) GenerateECSTags() []types.Tag {
 
 	for key, value := range config.Tags {
 		tags = append(tags, types.Tag{
+			Key:   aws.String(key),
+			Value: value,
+		})
+	}
+
+	return tags
+}
+
+// GenerateSecretTags generates tags for the ECS cluster and task definition that is created
+func (config *Config) GenerateSecretTags() []secretsTypes.Tag {
+	tags := make([]secretsTypes.Tag, 0, len(config.Tags))
+
+	for key, value := range config.Tags {
+		tags = append(tags, secretsTypes.Tag{
 			Key:   aws.String(key),
 			Value: value,
 		})

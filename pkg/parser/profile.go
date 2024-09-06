@@ -47,6 +47,8 @@ type ECS struct {
 	ECSClusterARN string `toml:"ecs_cluster_arn,omitempty"`
 	TaskDefARN    string `toml:"task_def_arn,omitempty"`
 	ServiceARN    string `toml:"service_arn,omitempty"`
+	RoleARN       string `toml:"role_arn,omitempty"`
+	SecretARN     string `tom:"secret_arn,omitempty"`
 }
 
 type AWSCloudResource struct {
@@ -95,7 +97,12 @@ func SaveProfile(profile *Profile, profilePath string) error {
 	if err != nil {
 		return fmt.Errorf("❌ failed to open profile file: %w", err)
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Printf("❌ failed to close profile file: %v", err)
+		}
+	}(file)
 
 	if err := toml.NewEncoder(file).Encode(profile); err != nil {
 		return fmt.Errorf("❌ failed to write to profile file: %w", err)

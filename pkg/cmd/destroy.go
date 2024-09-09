@@ -84,7 +84,6 @@ func init() {
 
 // destroyAllResources destroys all resources defined in the profile.
 func destroyAllResources(profile *parser.Profile, profilePath string) {
-
 	configFilePath := "locreg.yaml"
 	config, err := parser.LoadConfig(configFilePath)
 	if err != nil {

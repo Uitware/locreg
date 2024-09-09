@@ -86,7 +86,6 @@ func (iamClient IamClient) createRole(ctx context.Context, profile *parser.Profi
 }
 
 func (iamClient IamClient) destroyRole(ctx context.Context, profile *parser.Profile) {
-
 	// Delete inline policy "SecretsManagerAccessPolicy"
 	retryOnError(5, 5, func() error {
 		_, err := iamClient.client.DeleteRolePolicy(ctx, &iam.DeleteRolePolicyInput{

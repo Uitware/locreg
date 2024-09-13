@@ -27,7 +27,7 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeVpc),
 		})
 	if err != nil {
-		defer vpcClient.destroyVpc(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Printf("failed to create VPC, " + err.Error())
 		return nil
 	}
@@ -47,7 +47,7 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 			}},
 		})
 	if err != nil {
-		defer vpcClient.destroyVpc(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Println("failed to get security group, " + err.Error())
 		return nil
 	}
@@ -60,7 +60,7 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeSecurityGroupRule),
 		})
 	if err != nil {
-		defer vpcClient.destroyVpc(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Println("failed to authorize security group ingress, " + err.Error())
 		return nil
 	}
@@ -76,7 +76,7 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 		// Remove as not affecting the work of deployed containers
 		// and don't affect anything
 		if !strings.Contains(err.Error(), "InvalidPermission.Duplicate") {
-			defer vpcClient.destroyVpc(ctx, profile)
+			defer Destroy(vpcClient.locregConfig)
 			log.Println("failed to authorize security group egress, " + err.Error())
 			return nil
 		}
@@ -96,7 +96,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeSubnet),
 		})
 	if err != nil {
-		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Println("failed to create subnet, " + err.Error())
 		return ""
 	}
@@ -109,7 +109,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeInternetGateway),
 		})
 	if err != nil {
-		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Print("failed to create internet gateway, " + err.Error())
 		return ""
 	}
@@ -123,7 +123,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			TagSpecifications: vpcClient.locregConfig.GenerateVPCTags(types.ResourceTypeRouteTable),
 		})
 	if err != nil {
-		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Println("failed to create route table, " + err.Error())
 		return ""
 	}
@@ -139,7 +139,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			InternetGatewayId: internetGateway.InternetGateway.InternetGatewayId,
 		})
 	if err != nil {
-		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Println("failed to attach internet gateway, " + err.Error())
 		return ""
 	}
@@ -152,7 +152,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			GatewayId:            internetGateway.InternetGateway.InternetGatewayId,
 		})
 	if err != nil {
-		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Println("failed to create route, " + err.Error())
 		return ""
 	}
@@ -164,7 +164,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			SubnetId:     subnet.Subnet.SubnetId,
 		})
 	if err != nil {
-		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Println("failed to associate route table, " + err.Error())
 		return ""
 	}
@@ -178,7 +178,7 @@ func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *pars
 			},
 		})
 	if err != nil {
-		defer vpcClient.deregisterAndDestroyFromVPC(ctx, profile)
+		defer Destroy(vpcClient.locregConfig)
 		log.Println("failed to modify subnet attribute, " + err.Error())
 		return ""
 	}
@@ -225,6 +225,8 @@ func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, prof
 	if err != nil {
 		log.Fatal("failed to delete internet gateway, " + err.Error())
 	}
+	profile.AWSCloudResource.VPC.InternetGatewayId = ""
+	profile.Save()
 
 	// Subnet must be deleted before route table because it is associated with
 	// it and route table will not be deleted otherwise
@@ -236,6 +238,8 @@ func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, prof
 			})
 		return err
 	})
+	profile.AWSCloudResource.VPC.SubnetId = ""
+	profile.Save()
 
 	// routeTable
 	retryOnError(10, 5, func() error {
@@ -246,6 +250,8 @@ func (vpcClient VpcClient) deregisterAndDestroyFromVPC(ctx context.Context, prof
 			})
 		return err
 	})
+	profile.AWSCloudResource.VPC.RouteTableId = ""
+	profile.Save()
 }
 
 func (vpcClient VpcClient) destroyVpc(ctx context.Context, profile *parser.Profile) {

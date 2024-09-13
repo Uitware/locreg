@@ -84,6 +84,7 @@ type Config struct {
 					ServiceContainerCount int    `mapstructure:"serviceContainerCount" default:"1"`
 					TaskDefinition        struct {
 						Family              string `mapstructure:"family" default:"locreg-task"`
+						IAMRoleName         string `mapstructure:"awsRoleName" default:"locreg-role"`
 						MemoryAllocation    int    `mapstructure:"memoryAllocation" default:"512"`
 						CPUAllocation       int    `mapstructure:"cpuAllocation" default:"256"`
 						ContainerDefinition struct {
@@ -189,9 +190,9 @@ func setDynamicDefaults() {
 		viper.Set("tags", map[string]*string{})
 	}
 
-	viper.SetDefault("registry.username", generateRandomString(36))
-	viper.SetDefault("registry.password", generateRandomString(36))
-	viper.SetDefault("deploy.provider.azure.appService.name", fmt.Sprintf("locregappservice%s", generateRandomString(8)))
+	viper.SetDefault("registry.username", GenerateRandomString(36))
+	viper.SetDefault("registry.password", GenerateRandomString(36))
+	viper.SetDefault("deploy.provider.azure.appService.name", fmt.Sprintf("locregappservice%s", GenerateRandomString(8)))
 	viper.SetDefault("deploy.provider.azure.containerInstance.ipAddress.ports", []map[string]interface{}{
 		{
 			"port":     80,
@@ -218,7 +219,7 @@ func getGitSHA() string {
 	return strings.TrimSpace(string(output))
 }
 
-func generateRandomString(length int) string {
+func GenerateRandomString(length int) string {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {
 		panic(err)

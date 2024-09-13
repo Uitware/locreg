@@ -20,6 +20,12 @@ var destroyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		resource := args[0]
 
+		configFilePath := "locreg.yaml"
+		config, err := parser.LoadConfig(configFilePath)
+		if err != nil {
+			log.Fatalf("❌ Error loading config: %v", err)
+		}
+
 		profile, profilePath := parser.LoadProfileData()
 		if profile == nil {
 			log.Fatalf("❌ Failed to load profile.")
@@ -56,7 +62,7 @@ var destroyCmd = &cobra.Command{
 				fmt.Println("✅ Cloud resources destroyed successfully")
 			}
 			if profile.AWSCloudResource != nil {
-				aws.Destroy()
+				aws.Destroy(config)
 				profile.AWSCloudResource = nil
 				profile.Save()
 				fmt.Println("✅ Cloud resources destroyed successfully")
@@ -78,6 +84,12 @@ func init() {
 
 // destroyAllResources destroys all resources defined in the profile.
 func destroyAllResources(profile *parser.Profile, profilePath string) {
+	configFilePath := "locreg.yaml"
+	config, err := parser.LoadConfig(configFilePath)
+	if err != nil {
+		log.Fatalf("❌ Error loading config: %v", err)
+	}
+
 	if profile.LocalRegistry != nil {
 		err := local_registry.DestroyLocalRegistry()
 		if err != nil {
@@ -106,7 +118,7 @@ func destroyAllResources(profile *parser.Profile, profilePath string) {
 	}
 
 	if profile.AWSCloudResource != nil {
-		aws.Destroy()
+		aws.Destroy(config)
 		profile.AWSCloudResource = nil
 		profile.Save()
 		fmt.Println("✅ Cloud resources destroyed successfully")

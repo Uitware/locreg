@@ -17,6 +17,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.28
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.175.1
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.45.1
+	github.com/aws/aws-sdk-go-v2/service/iam v1.35.0
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.32.6
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/docker/docker v27.1.1+incompatible
 	github.com/docker/go-connections v0.5.0

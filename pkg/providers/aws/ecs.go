@@ -22,7 +22,7 @@ type EcsClient struct {
 
 // deployECS creates an ECS cluster on Fargate with VPC and public subnet
 // that is used to deploy the containers into
-func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config) string {
+func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config, envVars map[string]string) string {
 	profile, _ := parser.LoadProfileData()
 	resp, err := ecsClient.client.CreateCluster(ctx, &ecs.CreateClusterInput{
 		CapacityProviders: []string{"FARGATE"},
@@ -60,19 +60,26 @@ func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config) string
 	subnetId := ec2Instance.createPublicSubnet(ctx, profile)
 
 	// Create task definition
-	ecsClient.createTaskDefinition(ctx, profile)
+	ecsClient.createTaskDefinition(ctx, profile, envVars)
 
 	log.Println("cluster created ")
 	return subnetId
 }
 
-func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *parser.Profile) {
+func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *parser.Profile, envVars map[string]string) {
 	taskRuntimePlatform := types.RuntimePlatform{
 		CpuArchitecture:       types.CPUArchitectureX8664,
 		OperatingSystemFamily: types.OSFamilyLinux,
 	}
 
-	log.Printf("\n" + profile.AWSCloudResource.ECS.SecretARN)
+	// Prepare environment variables from the env file
+	var ECSEnvVars []types.KeyValuePair
+	for key, value := range envVars {
+		ECSEnvVars = append(ECSEnvVars, types.KeyValuePair{
+			Name:  aws.String(key),
+			Value: aws.String(value),
+		})
+	}
 
 	containerDefinition := []types.ContainerDefinition{{
 		Name: aws.String(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.ContainerDefinition.Name),
@@ -83,6 +90,7 @@ func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *pa
 			CredentialsParameter: aws.String(profile.AWSCloudResource.ECS.SecretARN),
 		},
 		PortMappings: ecsClient.locregConfig.GenerateContainerPorts(),
+		Environment:  ECSEnvVars,
 	}}
 	resp, err := ecsClient.client.RegisterTaskDefinition(ctx, &ecs.RegisterTaskDefinitionInput{
 		Family:               aws.String(ecsClient.locregConfig.Deploy.Provider.AWS.ECS.TaskDefinition.Family),
@@ -170,6 +178,9 @@ func (ecsClient EcsClient) deregisterContainerInstances(ctx context.Context, pro
 	})
 	if err != nil {
 		log.Print("failed to list container instances, " + err.Error())
+	}
+	if listResp == nil {
+		return
 	}
 
 	if len(listResp.ContainerInstanceArns) == 0 {

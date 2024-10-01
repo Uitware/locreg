@@ -73,7 +73,7 @@ func (ecsClient EcsClient) createTaskDefinition(ctx context.Context, profile *pa
 	}
 
 	// Prepare environment variables from the env file
-	var ECSEnvVars []types.KeyValuePair
+	ECSEnvVars := make([]types.KeyValuePair, 0, len(envVars))
 	for key, value := range envVars {
 		ECSEnvVars = append(ECSEnvVars, types.KeyValuePair{
 			Name:  aws.String(key),
@@ -178,9 +178,6 @@ func (ecsClient EcsClient) deregisterContainerInstances(ctx context.Context, pro
 	})
 	if err != nil {
 		log.Print("failed to list container instances, " + err.Error())
-	}
-	if listResp == nil {
-		log.Print("failed to list container instances, response is nil")
 	}
 
 	if len(listResp.ContainerInstanceArns) == 0 {

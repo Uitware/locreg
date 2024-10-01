@@ -180,7 +180,7 @@ func (ecsClient EcsClient) deregisterContainerInstances(ctx context.Context, pro
 		log.Print("failed to list container instances, " + err.Error())
 	}
 	if listResp == nil {
-		return
+		log.Print("failed to list container instances, response is nil")
 	}
 
 	if len(listResp.ContainerInstanceArns) == 0 {

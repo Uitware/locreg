@@ -1,0 +1,45 @@
+registry:
+  port: 5555
+  tag: "2"
+  image: "nginx"
+  name: "my-registry"
+  username: "myUsername"
+  password: "myPassword"
+
+image:
+  name: "weather-app"
+  tag: "latest"
+
+tunnel:
+  provider:
+    ngrok: # provider name
+    # provider specific configuration if provided
+
+deploy:
+  provider:
+    aws:
+      region: "us-east-1"
+      ecs:
+        clusterName: "locreg-cluster"
+        serviceName: "locreg-service"
+        serviceContainerCount: 1
+        taskDefinition:
+          family: "locreg-task"
+          memoryAllocation: 512
+          cpuAllocation: 256
+          containerDefinitions:
+            locreg-container:
+              portMappings:
+                - containerPort: 80
+                  hostPort: 80
+                  protocol: "tcp"
+      vpc:
+        cidrBlock: "10.10.0.0/16"
+        subnet:
+          cidrBlock: "10.10.10.0/24"
+
+
+
+
+
+

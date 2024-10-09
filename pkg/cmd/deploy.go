@@ -42,10 +42,9 @@ var deployCmd = &cobra.Command{
 
 		switch provider {
 		case "aws":
-			aws.Deploy(config)
+			aws.Deploy(config, envVars)
 		case "azure":
 			azure.Deploy(config, envVars)
-
 		case "gcp":
 			gcp.Deploy()
 		default:

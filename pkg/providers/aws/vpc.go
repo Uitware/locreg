@@ -28,7 +28,7 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 		})
 	if err != nil {
 		defer Destroy(vpcClient.locregConfig)
-		log.Printf("failed to create VPC, " + err.Error())
+		log.Printf("failed to create VPC, %v", err.Error())
 		return nil
 	}
 	profile.AWSCloudResource.VPC = &parser.VPC{

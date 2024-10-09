@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-func Deploy(locregCfg *parser.Config) {
+func Deploy(locregCfg *parser.Config, envVars map[string]string) {
 	ctx := context.Background()
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(locregCfg.Deploy.Provider.AWS.Region))
 	if err != nil {
@@ -19,6 +19,6 @@ func Deploy(locregCfg *parser.Config) {
 		client:       ecsClient,
 		locregConfig: locregCfg,
 	}
-	subnetId := ecsInstance.deployECS(ctx, cfg)
+	subnetId := ecsInstance.deployECS(ctx, cfg, envVars)
 	ecsInstance.runService(ctx, subnetId)
 }

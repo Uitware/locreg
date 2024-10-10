@@ -240,19 +240,19 @@ deploy:
         serviceContainerCount: 1 # Number of containers to run. May be omitted
         taskDefinition:
           family: "myTaskFamily" # Name of the task family. May be omitted
+          awsRoleName: "myRoleName" # Name of the AWS role. May be omitted
           memoryAllocation: 512 # Memory allocated for the task in MB. May be omitted
           cpuAllocation: 256 # CPU units allocated for the task. May be omitted
           containerDefinitions:
-            - name: "myContainerName" # Name of the container. Must be unique. May be omitted
-              portMappings:
-                - containerPort: 80 # Port number on the container. May be omitted
-                  hostPort: 80 # Port number on the host. May be omitted
-                  protocol: "tcp" # Protocol used by the container. May be omitted
+            name: "myContainerName" # Name of the container. Must be unique. May be omitted
+            portMappings:
+              - containerPort: 80 # Port number on the container. May be omitted
+                hostPort: 80 # Port number on the host. May be omitted
+                protocol: "tcp" # Protocol used by the container. May be omitted
       vpc: # VPC (Virtual Private Cloud) configuration
         cidrBlock: "10.0.0.0/16" # CIDR block for the VPC. May be omitted
         subnet:
           cidrBlock: "10.0.1.0/24" # CIDR block for the subnet. May be omitted
-
 ```
 
 #### ECS default values
@@ -271,16 +271,15 @@ deploy:
           memoryAllocation: 512
           cpuAllocation: 256
           containerDefinitions:
-            - name: "locreg-container"
-              portMappings:
-                - containerPort: 80
-                  hostPort: 80
-                  protocol: "tcp"
+            name: "locreg-container"
+            portMappings:
+              - containerPort: 80
+                hostPort: 80
+                protocol: "tcp"
       vpc:
         cidrBlock: "10.10.0.0/16"
         subnet:
           cidrBlock: "10.10.10.0/24"
-
 ```
 
 ## Tags configuration

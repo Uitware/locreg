@@ -150,7 +150,7 @@ tunnel:
       networkName: "ngrok-network" # Name of the Docker network to which the Ngrok tunnel container will connect, if omitted, default value locreg-ngrok will be assigned.
 ```
 
-Note that you should export ```NGROK_AUTHTOKEN``` in order to use Ngrok tunnel backend: 
+> **_NOTE:_** that you should export ```NGROK_AUTHTOKEN``` in order to use Ngrok tunnel backend: 
 
 
 ☁️ Application backend (configuration of the serverless cloud runtime resource) example: 
@@ -214,6 +214,8 @@ tags: # Tags for the cloud resources
 #tags: false
 ```
 
+> **_NOTE:_** You should authenticate with ```az``` CLI in order to use Azure application backend: https://learn.microsoft.com/en-us/cli/azure/reference-index?view=azure-cli-latest#az-login
+
 ☁️AWS ECS(Elastic Container Service):
 
 ```
@@ -241,7 +243,7 @@ deploy:
           cidrBlock: "10.0.1.0/24" # CIDR block for the subnet. May be omitted
 ```
 
-Note that you should authenticate with ```az``` CLI in order to use Azure application backend: https://learn.microsoft.com/en-us/cli/azure/reference-index?view=azure-cli-latest#az-login
+> **_NOTE:_** You should authenticate with ```aws``` CLI in order to use AWS application backend: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html
 
 ## 📦 ```locreg``` Docs
 Read detailed documentation on how to use ```locreg``` in here - [docs](https://uitware.github.io/locreg/)

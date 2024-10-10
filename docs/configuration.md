@@ -61,7 +61,7 @@ registry:
 > As you can see, all configuration items for registry are optional. So if you want you can only specify `registry:` in your config, and it will be launched with all the default values.
 
 ### Registry default values
-The default values for the registry configuration are predefined by the `locreg`, except of password and username witch are randomly generated 32 characters long strings.
+The default values for the registry configuration are predefined by the `locreg`, except of password and username that are randomly generated 32 characters long strings.
 Default values are as follows:
 ```yaml
 registry:
@@ -304,7 +304,7 @@ tags:
 ### Tags turning on/off
 Tags part can be omitted, but if you do tag `managed-by: locreg` will be still added to all resources created by `locreg`.
 To disable tags, you can explicitly set `tags:` to `false` as shown bellow:  
-**Notice that it isn't recommended to disable tags - they allow to easily identify locreg-managed resources**
+**Notice that it isn't recommended to disable tags because they allow easily identifying locreg-managed resources**
 ```yaml
 tags: false
 ```

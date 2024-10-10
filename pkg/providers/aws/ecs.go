@@ -57,7 +57,7 @@ func (ecsClient EcsClient) deployECS(ctx context.Context, cfg aws.Config, envVar
 	}
 	SecretInstance.createSecret(ctx, profile)
 	IamInstance.createRole(ctx, profile)
-	subnetId := ec2Instance.createPublicSubnet(ctx, profile)
+	subnetId := ec2Instance.createVpcForFargate(ctx, profile)
 
 	// Create task definition
 	ecsClient.createTaskDefinition(ctx, profile, envVars)

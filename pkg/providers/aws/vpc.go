@@ -16,10 +16,9 @@ type VpcClient struct {
 	locregConfig *parser.Config
 }
 
-// createVpcForFargate creates a VPC in AWS and public subnet
-// For containers that use the Fargate launch type.
+// createVPC creates a VPC in AWS
 // return: vpcId
-func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *parser.Profile) *string {
+func (vpcClient VpcClient) createVPC(ctx context.Context, profile *parser.Profile) *string {
 	resp, err := vpcClient.client.CreateVpc(
 		ctx,
 		&ec2.CreateVpcInput{
@@ -84,10 +83,11 @@ func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *par
 	return resp.Vpc.VpcId
 }
 
-// createPublicSubnet creates a public subnet in the VPC
-// For containers that use the Fargate launch type
-func (vpcClient VpcClient) createPublicSubnet(ctx context.Context, profile *parser.Profile) string {
-	vpcId := vpcClient.createVpcForFargate(ctx, profile)
+// createVpcForFargate creates a VPC in AWS and public subnet
+// For containers that use the Fargate launch type.
+// return: subnetId
+func (vpcClient VpcClient) createVpcForFargate(ctx context.Context, profile *parser.Profile) string {
+	vpcId := vpcClient.createVPC(ctx, profile)
 	subnet, err := vpcClient.client.CreateSubnet(
 		ctx,
 		&ec2.CreateSubnetInput{

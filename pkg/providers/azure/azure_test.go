@@ -120,6 +120,8 @@ func TestDeployContainerInstance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
+	registryURl := os.Getenv("REGISTRY_URL")
+
 	config.Deploy.Provider.Azure.ResourceGroup = ResourceGroup
 	config.Deploy.Provider.Azure.ContainerInstance.Name = ContainerInstanceName
 	config.Registry.Username = os.Getenv("REGISTRY_USERNAME")
@@ -149,7 +151,7 @@ func TestDeployContainerInstance(t *testing.T) {
 	aciClient = aciClientFactory.NewContainerGroupsClient()
 	envVars, _ := parser.LoadEnvVarsFromFile(filepath.Join(getProjectRoot(), "test", "test_configs", "azure", "env_example_locreg.env"))
 	t.Run("DeployContainerInstance", func(t *testing.T) {
-		aci, err := createACI(ctx, config, "docker.io", envVars)
+		aci, err := createACI(ctx, config, registryURl, envVars)
 		if err != nil {
 			t.Fatalf("Failed to create ACI: %v", err)
 		} else {

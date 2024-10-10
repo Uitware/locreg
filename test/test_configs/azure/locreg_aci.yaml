@@ -7,7 +7,7 @@ registry:
   password: "12"
 
 image:
-  name: "vitalikstelmah60/weather-app"
+  name: "weather-app"
   tag: "latest"
 
 tunnel:

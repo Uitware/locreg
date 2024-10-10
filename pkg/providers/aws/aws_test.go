@@ -52,7 +52,7 @@ func TestVPC(t *testing.T) {
 	profile.AWSCloudResource = &parser.AWSCloudResource{}
 	profile.Save()
 
-	vpcInstance.createPublicSubnet(ctx, profile)
+	vpcInstance.createVpcForFargate(ctx, profile)
 
 	profile, _ = parser.LoadProfileData()
 	expectedVPCID, err := getExpectedVPCID(profile)

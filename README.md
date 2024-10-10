@@ -8,7 +8,7 @@ Serverless container runtimes like AWS ECS, Azure App Service for Containers, GC
 - 🛠️ **builds** the container image and **pushes** to local registry
 - 🌐 spins up a **temporary tunnel** to expose local registry to the Internet (Ngrok is supported for now, Cloudflared coming soon)
 - 🚀 deploys a serverless container runtime resource (Azure App Service supported for now, AWS ECS and GCP Cloud Run coming soon)
-- passes the credentials of publicly exposed local registry to serverless container runtime resource to streamline the deployment 
+- 🔑 passes the credentials of publicly exposed local registry to serverless container runtime resource to streamline the deployment 
 
  **Your application is up and running on a cloud serverless platform! 🎉** Now you can easily **rebuild** and **redeploy** your application using ```locreg```, and **when the testing is done - easily destroy both local and cloud resources via ```locreg```**!
 

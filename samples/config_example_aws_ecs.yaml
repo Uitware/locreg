@@ -1,0 +1,52 @@
+registry:
+  port: 5555
+  tag: "2"
+  image: "registry"
+  name: "my-registry"
+  username: "myUsername"
+  password: "myPassword"
+
+image:
+  name: "weather-app"
+  tag: "latest"
+
+tunnel:
+  provider:
+    ngrok: # provider name
+
+deploy:
+  provider:
+    aws:
+      region: "us-east-1"
+      ecs:
+        clusterName: "locreg-cluster"
+        serviceName: "locreg-service"
+        serviceContainerCount: 1
+        taskDefinition:
+          family: "locreg-task"
+          memoryAllocation: 512
+          cpuAllocation: 256
+          containerDefinitions:
+            locreg-container:
+              portMappings:
+                - containerPort: 80
+                  hostPort: 80
+                  protocol: "tcp"
+      vpc:
+        cidrBlock: "10.10.0.0/16"
+        subnet:
+          cidrBlock: "10.10.10.0/24"
+
+
+tags: # Tags for the cloud resources
+  managed-by: "locreg"  #Can be specified one or multiple tags
+
+# Multiple tags example:
+#
+#tags:
+#  locreg-version: "0.1.0"
+#  test: "test"
+
+# By default, locreg tags all resources as managed-by: locreg
+# If you want to turn off the tags (which is not recommended), you can set it to `false` like in example below
+#tags: false

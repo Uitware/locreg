@@ -3,7 +3,7 @@
 ### Setup 
 [Install `locreg` and Prerequisites](./install.md)
 
->To start using `locreg` you need to have: `locreg`, `docker` and corresponding cloud's CLI installed on your machine. Currently only `az cli` is supported. 
+>To start using `locreg` you need to have: `locreg`, `docker` and corresponding cloud's CLI installed on your machine.
 
 ### Import your tunnel credentials 
 ```bash
